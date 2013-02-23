@@ -1,0 +1,18 @@
+###Java###
+
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+
+###Other###
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+.project
+.DS_Store
+.idea
