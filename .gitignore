@@ -11,8 +11,22 @@
 ###Other###
 *.sublime-project
 *.sublime-workspace
-*.swp
-*~
-.project
+
+### OSX Files ###
 .DS_Store
-.idea
+._*
+.Spotlight-V100
+.Trashes
+
+### Windows ###
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+### Linux ###
+.*
+!.gitignore
+*~
+
+# KDE
+.directory
