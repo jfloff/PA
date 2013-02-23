@@ -9,6 +9,8 @@ Programação Avançada
 
 ### Lab 02
 
+**Enunciado:** https://fenix.ist.utl.pt/disciplinas/pava364/2012-2013/2-semestre/labs/lab-02
+
 ### Lab 03
 
 
