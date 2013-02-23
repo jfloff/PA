@@ -26,9 +26,9 @@ public class Shell {
             else if (command.equals("Get"))
                 byGet(scanner.next());
             else if (command.equals("Index"))
-                byIndex(scanner.nextLine());
+                byIndex(scanner.nextInt());
             else
-                byMethod(command);
+                byMethod(command + scanner.nextLine());
         }
     }
 
@@ -67,9 +67,14 @@ public class Shell {
         System.out.println(last);
     }
 
-    public static void byIndex(String index)
+    public static void byIndex(int index)
     {
-        System.out.println("'" + index + "'");
+        if(last.getClass().isArray()){
+            Object[] tmp = (Object[]) last;
+            last = tmp[index];
+        }
+        // if not an array returns itself
+        System.out.println(last);
     }
 
     public static void byMethod(String methodcall)
@@ -98,6 +103,7 @@ public class Shell {
             } else {
                 System.out.println(result);
             }
+            last = result;
         } catch (NoSuchMethodException e) {
             System.out.println("[ERROR] No such method available " + name + " for class " + last);
         } catch (IllegalAccessException e){
