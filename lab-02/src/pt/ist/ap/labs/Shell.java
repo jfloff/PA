@@ -1,6 +1,8 @@
 package pt.ist.ap.labs;
 import java.util.*;
+import java.lang.reflect.*;
 
+@SuppressWarnings("unchecked")
 public class Shell {
 
     // Last object to be kept
@@ -13,7 +15,7 @@ public class Shell {
         stored = new HashMap<String, Object>();
 
         while(true){
-            System.out.println("$ ");
+            System.out.println("Command:> ");
             Scanner scanner = new Scanner (System.in);
             String command = scanner.next();
 
@@ -24,9 +26,7 @@ public class Shell {
             else if (command.equals("Get"))
                 byGet(scanner.next());
             else if (command.equals("Index"))
-                byIndex(scanner.next());
-            else if (command.equals("\\q"))
-                return;
+                byIndex(scanner.nextLine());
             else
                 byMethod(command);
         }
@@ -36,16 +36,11 @@ public class Shell {
     {
         try{
             Class c = Class.forName(classname);
-            last = c.newInstance();
+            last = c.asSubclass(c);
+            System.out.println(last);
         } catch (ClassNotFoundException e){
-            System.out.println("[ERROR] Class '" + classname + "' not found.");
-        } catch (InstantiationException e){
-            System.out.println("[ERROR] Error instanciating '" + classname + "'.");
-        } catch (IllegalAccessException e){
-            System.out.println("[ERROR] Error instanciating '" + classname + "'.");
+            System.out.println("[ERROR] Class not found: " + classname);
         }
-
-        System.out.println(last.getClass());
     }
 
     public static void bySet(String toset)
@@ -57,7 +52,7 @@ public class Shell {
 
         stored.put(toset, last);
         System.out.println("Saved name for object of type: " + last.getClass());
-        System.out.println(last.getClass());
+        System.out.println(last);
     }
 
     public static void byGet(String toget)
@@ -66,10 +61,10 @@ public class Shell {
         if (tmp == null){
             System.out.println("No object stored with key: " + toget);
         } else {
-            last = temp;
+            last = tmp;
         }
 
-        System.out.println(last.getClass());
+        System.out.println(last);
     }
 
     public static void byIndex(String index)
@@ -77,8 +72,40 @@ public class Shell {
         System.out.println("'" + index + "'");
     }
 
-    public static void byMethod(String methodname)
+    public static void byMethod(String methodcall)
     {
-        System.out.println("'" + methodname + "'");
+        if(last == null){
+            System.out.println("[ERROR] No object available to call method on");
+            return;
+        }
+        System.out.println("Trying generic command: " + methodcall);
+
+        // First space if the method name, others are method arguments
+        String[] temp = methodcall.split(" ");
+        String name = temp[0];
+        Object[] args = (Object[]) Arrays.copyOfRange(temp, 1, temp.length);
+
+        Class c = last.getClass();
+
+        try{
+            Method m = c.getMethod(name);
+            Object result = m.invoke(last, args);
+
+            if(result.getClass().isArray()){
+                for (Object o : (Object[]) result) {
+                    System.out.println(o);
+                }
+            } else {
+                System.out.println(result);
+            }
+        } catch (NoSuchMethodException e) {
+            System.out.println("[ERROR] No such method available " + name + " for class " + last);
+        } catch (IllegalAccessException e){
+            System.out.println("[ERROR] Error invoking method: " + name);
+        } catch (InvocationTargetException e){
+            System.out.println("[ERROR] Error invoking method: " + name);
+        } catch (IllegalArgumentException e){
+            System.out.println("[ERROR] Wrong number of arguments for method: " + name);
+        }
     }
 }
