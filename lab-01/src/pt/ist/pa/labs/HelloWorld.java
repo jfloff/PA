@@ -1,9 +1,8 @@
 package pt.ist.pa.labs;
 
-public class HelloWorld {
+public class HelloWorld implements Message{
 
-    public static void main(String[] args) {
-
+    public void say(){
         System.out.println("Hello World!");
     }
 }
