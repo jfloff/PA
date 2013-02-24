@@ -93,8 +93,16 @@ public class Shell {
         Class c = last.getClass();
 
         try{
-            Method m = c.getMethod(name);
-            Object result = m.invoke(last, args);
+            Object result = null;
+            for (Method m : c.getMethods()) {
+                if(name.equals(m.getName())){
+                    // falta verificar parametros com o getParametersType --> polimorfismo
+                    result = m.invoke(last, args.length == 0 ? null : new Object[] { args });
+                    break;
+                }
+            }
+
+            // System.out.println("[ERROR] No such method available " + name + " for class " + last);
 
             if(result.getClass().isArray()){
                 for (Object o : (Object[]) result) {
@@ -104,14 +112,13 @@ public class Shell {
                 System.out.println(result);
             }
             last = result;
-        } catch (NoSuchMethodException e) {
-            System.out.println("[ERROR] No such method available " + name + " for class " + last);
         } catch (IllegalAccessException e){
             System.out.println("[ERROR] Error invoking method: " + name);
         } catch (InvocationTargetException e){
             System.out.println("[ERROR] Error invoking method: " + name);
         } catch (IllegalArgumentException e){
             System.out.println("[ERROR] Wrong number of arguments for method: " + name);
+            e.printStackTrace();
         }
     }
 }
