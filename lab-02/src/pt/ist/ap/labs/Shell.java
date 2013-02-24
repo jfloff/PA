@@ -91,18 +91,33 @@ public class Shell {
         Object[] args = (Object[]) Arrays.copyOfRange(temp, 1, temp.length);
 
         Class c = last.getClass();
-
         try{
             Object result = null;
             for (Method m : c.getMethods()) {
                 if(name.equals(m.getName())){
-                    // falta verificar parametros com o getParametersType --> polimorfismo
-                    result = m.invoke(last, args.length == 0 ? null : new Object[] { args });
-                    break;
+                    Class[] typeClasses = m.getParameterTypes();
+                    if(typeClasses.length == args.length){
+                        // Casts arguments to correct Parameter Type
+                        Object[] finalArgs = new Object[args.length];
+                        for (int i=0; i<args.length; i++) {
+                            // If type of first argument is array, puts all arguments into the array
+                            if (typeClasses[i].isArray()){
+                                finalArgs[i] = typeClasses[i].cast(args);
+                                break;
+                            } else {
+                                finalArgs[i] = typeClasses[i].cast(args[i]);
+                            }
+                        }
+                        result = m.invoke(last, args.length == 0 ? null : finalArgs );
+                        break;
+                    }
                 }
             }
 
-            // System.out.println("[ERROR] No such method available " + name + " for class " + last);
+            if(result == null){
+                System.out.println("[ERROR] No such method available " + name + " for class " + last);
+                return;
+            }
 
             if(result.getClass().isArray()){
                 for (Object o : (Object[]) result) {
@@ -112,6 +127,7 @@ public class Shell {
                 System.out.println(result);
             }
             last = result;
+
         } catch (IllegalAccessException e){
             System.out.println("[ERROR] Error invoking method: " + name);
         } catch (InvocationTargetException e){
