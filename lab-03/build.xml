@@ -16,7 +16,7 @@
     <!-- Runs the programs compiled -->
     <target name="run" depends="compile" description="runs the programs" >
         <java classname="pt.ist.ap.labs.RunTests" classpath="${classes}" >
-            <arg value="${file}"/>
+            <arg value="${class}"/>
         </java>
     </target>
 
