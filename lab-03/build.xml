@@ -1,0 +1,27 @@
+<project name="lab03" default="run" basedir=".">
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="classes" location="classes"/>
+
+    <!-- Create the ${classes} directory structure used by compile -->
+    <target name="init" depends="clean" description="create directories">
+        <mkdir dir="${classes}"/>
+    </target>
+
+    <!-- Compile the java code from ${src} into ${build} -->
+    <target name="compile" depends="init" description="compile the source" >
+        <javac srcdir="${src}" destdir="${classes}" includeantruntime="false"/>
+    </target>
+
+    <!-- Runs the programs compiled -->
+    <target name="run" depends="compile" description="runs the programs" >
+        <java classname="pt.ist.ap.labs.RunTests" classpath="${classes}" >
+            <arg value="${file}"/>
+        </java>
+    </target>
+
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <target name="clean" description="clean up" >
+        <delete dir="${classes}"/>
+    </target>
+</project>
