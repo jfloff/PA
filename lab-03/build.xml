@@ -2,6 +2,7 @@
     <!-- set global properties for this build -->
     <property name="src" location="src"/>
     <property name="classes" location="classes"/>
+    <property name="tests" location="tests"/>
 
     <!-- Create the ${classes} directory structure used by compile -->
     <target name="init" depends="clean" description="create directories">
@@ -11,6 +12,7 @@
     <!-- Compile the java code from ${src} into ${build} -->
     <target name="compile" depends="init" description="compile the source" >
         <javac srcdir="${src}" destdir="${classes}" includeantruntime="false"/>
+        <!-- <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false"/> -->
     </target>
 
     <!-- Runs the programs compiled -->

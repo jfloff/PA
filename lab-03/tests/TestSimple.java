@@ -1,3 +1,5 @@
+import java.lang.reflect.Method;
+
 public class TestSimple {
     @Test
     public static void m1() {

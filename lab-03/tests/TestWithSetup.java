@@ -1,3 +1,5 @@
+import java.lang.reflect.Method;
+
 public class TestWithSetup {
 
     @Setup("s1")

@@ -1,3 +1,5 @@
+import java.lang.reflect.Method;
+
 public class TestInheritance extends TestWithSetup {
 
     @Setup("s4")
