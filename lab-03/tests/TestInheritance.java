@@ -14,7 +14,7 @@ public class TestInheritance extends TestWithSetup {
     }
 
     @Test("s2")
-    public void m11() {
+    public static void m11() {
         System.out.println("m11");
     }
 
