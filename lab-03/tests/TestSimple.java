@@ -1,4 +1,4 @@
-import java.lang.reflect.Method;
+import pt.ist.ap.labs.Test;
 
 public class TestSimple {
     @Test

@@ -10,9 +10,15 @@
     </target>
 
     <!-- Compile the java code from ${src} into ${build} -->
+    <path id="classpath">
+        <fileset dir="${classes}">
+            <include name="*.classes" />
+        </fileset>
+    </path>
+
     <target name="compile" depends="init" description="compile the source" >
         <javac srcdir="${src}" destdir="${classes}" includeantruntime="false"/>
-        <!-- <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false"/> -->
+        <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false"/>
     </target>
 
     <!-- Runs the programs compiled -->

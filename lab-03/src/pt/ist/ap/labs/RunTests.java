@@ -12,17 +12,33 @@ public class RunTests {
 
         int passed = 0, failed = 0;
 
-        for(Method m : Class.forName(args[0]).getMethods()){
-            // if(m.isAnnotationPresent(Test.class)){
-            //     // test for exceptions on the methods
-            //     try {
-            //        m.invoke(null);
-            //        passed++;
-            //     } catch (Throwable ex) {
-            //        System.out.printf("Test %s failed: %s %n", m, ex.getCause());
-            //        failed++;
-            //     }
-            // }
+        for(Method m : Class.forName(args[0]).getDeclaredMethods()){
+            if(m.isAnnotationPresent(Test.class)){
+                try {
+                    Test t = (Test) m.getAnnotation(Test.class);
+                    for (String name : t.value()) {
+                        for (Method mSetup : Class.forName(args[0]).getDeclaredMethods()) {
+                            if(mSetup.isAnnotationPresent(Setup.class)){
+                                Setup s = (Setup) mSetup.getAnnotation(Setup.class);
+                                if(name.equals("*") || s.value().equals(name)){
+                                    mSetup.setAccessible(true);
+                                    mSetup.invoke(null);
+                                }
+                            }
+                        }
+                    }
+
+                    m.setAccessible(true);
+                    m.invoke(null);
+                    System.out.println("Test " + m + " OK!");
+                    passed++;
+                } catch (Throwable ex) {
+                    System.out.println("Test " + m + " FAILED!");
+                    failed++;
+                }
+            }
         }
+
+        System.out.println("Passed: " + passed + ", Failed: " + failed);
     }
 }

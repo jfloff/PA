@@ -1,4 +1,5 @@
-import java.lang.reflect.Method;
+import pt.ist.ap.labs.Test;
+import pt.ist.ap.labs.Setup;
 
 public class TestInheritance extends TestWithSetup {
 
