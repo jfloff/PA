@@ -16,6 +16,7 @@ Programação Avançada
 *   **Enunciado:** https://fenix.ist.utl.pt/disciplinas/pava364/2012-2013/2-semestre/labs/lab-03
 *   Place classes to test inside the `tests` dir.
 *   **How to run in ant:** `ant -Dclass=<ClassName> run`
+*   Lacking not running m11 method (supposed to not be static): just check Modifiers and argument length
 
 ## Projecto
 
