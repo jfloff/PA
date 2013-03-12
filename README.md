@@ -1,4 +1,4 @@
-Programação Avançada
+Programacao Avancada
 ====================
 
 ## Labs
@@ -21,6 +21,7 @@ Programação Avançada
 ## Projecto
 
 ### Projecto 1
+*   **How to run in ant:** `ant -Dclass=<ClassName> run`
 
 ### Projecto 2
 
