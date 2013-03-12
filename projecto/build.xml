@@ -1,0 +1,35 @@
+<project name="checkassertions" default="run" basedir=".">
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="classes" location="classes"/>
+    <property name="tests" location="tests"/>
+
+    <!-- Create the ${classes} directory structure used by compile -->
+    <target name="init" depends="clean" description="create directories">
+        <mkdir dir="${classes}"/>
+    </target>
+
+    <!-- Compile the java code from ${src} into ${build} -->
+    <path id="classpath">
+        <fileset dir="${classes}">
+            <include name="*.classes" />
+        </fileset>
+    </path>
+
+    <target name="compile" depends="init" description="compile the source" >
+        <javac srcdir="${src}" destdir="${classes}" includeantruntime="false"/>
+        <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false"/>
+    </target>
+
+    <!-- Runs the programs compiled -->
+    <target name="run" depends="compile" description="runs the programs" >
+        <java classname="ist.meic.pa.CheckAssertions" classpath="${classes}" >
+            <arg value="${class}"/>
+        </java>
+    </target>
+
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <target name="clean" description="clean up" >
+        <delete dir="${classes}"/>
+    </target>
+</project>
