@@ -16,7 +16,7 @@
             <include name="*.classes"/>
         </fileset>
         <fileset dir="${lib}">
-            <include name="*.jar"/>
+            <include name="javassist.jar"/>
         </fileset>
     </path>
 
@@ -32,7 +32,8 @@
 
     <!-- Runs the programs compiled -->
     <target name="run" depends="compile" description="runs the programs" >
-        <java classname="ist.meic.pa.CheckAssertions" classpath="${classes}">
+        <java fork="true" classname="ist.meic.pa.CheckAssertions" classpath="${classes}">
+             <classpath refid="classpath"/>
             <arg value="ist.meic.pa.tests.${class}"/>
         </java>
     </target>
