@@ -6,7 +6,7 @@ import java.lang.annotation.*;
  * This annotation should be used only on parameterless static methods.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ElementType.FIELD, ElementType.METHOD})
 public @interface Assertion {
-    String value() default "";
+    String value();
 }
