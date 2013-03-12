@@ -1,4 +1,5 @@
 package ist.meic.pa.tests;
+import ist.meic.pa.Assertion;
 
 class Base {
 

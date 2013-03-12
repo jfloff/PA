@@ -1,5 +1,4 @@
 package ist.meic.pa.tests;
-
 import ist.meic.pa.Assertion;
 
 public class TestInit {

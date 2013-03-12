@@ -26,7 +26,7 @@
     <!-- Runs the programs compiled -->
     <target name="run" depends="compile" description="runs the programs" >
         <java classname="ist.meic.pa.CheckAssertions" classpath="${classes}" >
-            <arg value="${class}"/>
+            <arg value="ist.meic.pa.tests.${class}"/>
         </java>
     </target>
 
