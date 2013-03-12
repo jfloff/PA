@@ -5,13 +5,22 @@ import java.lang.annotation.*;
 import javassist.*;
 
 public class CheckAssertions {
-    static int passed = 0, failed = 0;
-    public static void main(String[] args) throws Exception {
+
+    public static void main(String[] args) throws Exception, Throwable {
         if(args.length != 1) {
             System.err.println("[ERROR] Invalid command line: one and one only filename expected");
             System.exit(1);
         }
-        parseAssertions(Class.forName(args[0]));
+
+        Translator translator = new CheckerTranslator();
+        ClassPool pool = ClassPool.getDefault();
+        Loader classLoader = new Loader();
+        classLoader.addTranslator(pool, translator);
+        String[] restArgs = new String[args.length - 1];
+        System.arraycopy(args, 1, restArgs, 0, restArgs.length);
+        classLoader.run(args[0], restArgs);
+
+        // parseAssertions(Class.forName(args[0]));
     }
 
     private static void parseAssertions(Class c){
