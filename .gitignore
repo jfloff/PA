@@ -4,6 +4,7 @@
 
 # Package Files #
 *.jar
+!javassist.jar
 *.war
 *.ear
 

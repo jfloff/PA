@@ -8,35 +8,41 @@
     <!-- Create the ${classes} directory structure used by compile -->
     <target name="init" depends="clean" description="create directories">
         <mkdir dir="${classes}"/>
-        <mkdir dir="${lib}"/>
     </target>
 
     <!-- Compile the java code from ${src} into ${build} -->
     <path id="classpath">
         <fileset dir="${classes}">
-            <include name="*.classes" />
+            <include name="*.classes"/>
+        </fileset>
+        <fileset dir="${lib}">
+            <include name="*.jar"/>
         </fileset>
     </path>
 
     <target name="compile" depends="init" description="compile the source" >
-        <javac srcdir="${src}" destdir="${classes}" includeantruntime="false"/>
-        <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false"/>
+        <javac srcdir="${src}" destdir="${classes}" includeantruntime="false">
+            <classpath refid="classpath"/>
+        </javac>
+        <javac srcdir="${tests}" destdir="${classes}" includeantruntime="false">
+            <classpath refid="classpath"/>
+        </javac>
+
     </target>
 
     <!-- Runs the programs compiled -->
     <target name="run" depends="compile" description="runs the programs" >
-        <java classname="ist.meic.pa.CheckAssertions" classpath="${classes}" >
+        <java classname="ist.meic.pa.CheckAssertions" classpath="${classes}">
             <arg value="ist.meic.pa.tests.${class}"/>
         </java>
     </target>
 
     <target name="jar" depends="compile" description="makes jar for this program" >
-          <jar destfile="${lib}/checkassertions.jar" basedir="${classes}" excludes=""/>
+          <jar destfile="checkassertions.jar" basedir="${classes}" excludes=""/>
     </target>
 
     <!-- Delete classes and lib folders -->
     <target name="clean" description="clean up" >
         <delete dir="${classes}"/>
-        <delete dir="${lib}"/>
     </target>
 </project>
