@@ -1,3 +1,5 @@
+import ist.meic.pa.Assertion;
+
 public class Derived extends Base {
 
     @Override

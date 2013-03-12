@@ -1,3 +1,5 @@
+import ist.meic.pa.Assertion;
+
 public class Test {
     @Assertion("foo>0")
     int foo=1;

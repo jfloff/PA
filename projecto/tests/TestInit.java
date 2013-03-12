@@ -1,3 +1,5 @@
+import ist.meic.pa.Assertion;
+
 public class TestInit {
 
     @Assertion("true")
