@@ -16,11 +16,16 @@ public class CheckAssertions {
     private static void parseAssertions(Class c){
         if (c.getSuperclass() != null){
             parseAssertions(c.getSuperclass());
-            for(Method m : c.getDeclaredMethods()){
-                Annotation[] annotations = m.getAnnotations();
-                for (Annotation a : annotations) {
+            for(Field f : c.getDeclaredFields()){
+                for (Annotation a : f.getAnnotations()) {
                     String classname = a.annotationType().getName();
-                    System.out.println("ANNOT NAME = " + classname);
+                    System.out.println("FIELD ANNOT NAME = " + classname);
+                }
+            }
+            for(Method m : c.getDeclaredMethods()){
+                for (Annotation a : m.getAnnotations()) {
+                    String classname = a.annotationType().getName();
+                    System.out.println("METHOD ANNOT NAME = " + classname);
                 }
             }
         }
