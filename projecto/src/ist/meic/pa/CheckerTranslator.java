@@ -22,27 +22,22 @@ public class CheckerTranslator implements Translator {
 
     public void checkBehaviors(CtClass ctClass) throws NotFoundException, CannotCompileException {
 	    for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
-	    	// checkBehaviorAnnottation(behavior);
-	    	behavior.getLongName();
-	    }
-	}
-
-	private void checkBehaviorAnnottation(CtBehavior member) throws CannotCompileException {
-		 member.instrument(new ExprEditor() {
-            public void edit(FieldAccess fa) throws CannotCompileException {
-                if (fa.isWriter()) {
-					try{
-                    	CtField field = fa.getField();
-	                    if(field.hasAnnotation(Assertion.class)){
-	                    	Assertion a = (Assertion) field.getAnnotation(Assertion.class);
-		                    fa.replace(String.format(template, fa.getFieldName(), a.value()));
+	    	behavior.instrument(new ExprEditor() {
+				public void edit(FieldAccess fa) throws CannotCompileException {
+	                if (fa.isWriter()) {
+						try{
+	                    	CtField field = fa.getField();
+		                    if(field.hasAnnotation(Assertion.class)){
+		                    	Assertion a = (Assertion) field.getAnnotation(Assertion.class);
+			                    fa.replace(String.format(template, fa.getFieldName(), a.value()));
+		                    }
 	                    }
-                    }
-                    catch (NotFoundException e){}
-                    catch (ClassNotFoundException e){}
-                }
-         	}
-        });
+	                    catch (NotFoundException e){}
+	                    catch (ClassNotFoundException e){}
+	                }
+	         	}
+	        });
+	    }
 	}
 
 	public static void evalExpr(boolean expr) {

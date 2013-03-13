@@ -3,16 +3,16 @@ import ist.meic.pa.Assertion;
 
 public class Test {
     @Assertion("foo>0")
-    static int foo;
+    int foo;
 
     @Assertion("bar%2==0")
-    static long bar;
+    long bar;
 
     @Assertion("baz>foo")
-    static int baz;
+    int baz;
 
     @Assertion("quux.length()>1")
-    static String quux;
+    String quux;
 
     {
         bar=2;
@@ -22,8 +22,7 @@ public class Test {
         bar++;
     }
 
-    public static void main(String[] args) throws Exception, Throwable {
-
+    public void testing(){
         // Testing foo
         foo = 0;
         foo = 1;
@@ -40,5 +39,12 @@ public class Test {
         // Testing quux
         quux = "aa";
         quux = "a";
+    }
+
+    public static void main(String[] args) throws Exception, Throwable {
+
+        Test t = new Test();
+
+        t.testing();
     }
 }
