@@ -3,7 +3,7 @@ import ist.meic.pa.Assertion;
 
 public class Test {
     @Assertion("foo>0")
-    static int foo=1;
+    static int foo;
 
     @Assertion("bar%2==0")
     static long bar;
@@ -13,6 +13,14 @@ public class Test {
 
     @Assertion("quux.length()>1")
     static String quux;
+
+    {
+        bar=2;
+        baz=3;
+        bar+=2;
+        quux="foo";
+        bar++;
+    }
 
     public static void main(String[] args) throws Exception, Throwable {
 
