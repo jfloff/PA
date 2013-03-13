@@ -3,36 +3,34 @@ import ist.meic.pa.Assertion;
 
 public class Test {
     @Assertion("foo>0")
-    int foo=1;
+    static int foo=1;
 
     @Assertion("bar%2==0")
-    long bar;
+    static long bar;
 
     @Assertion("baz>foo")
-    int baz;
+    static int baz;
 
     @Assertion("quux.length()>1")
-    String quux;
+    static String quux;
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        Test t = new Test();
-
         // Testing foo
-        t.foo = 0;
-        t.foo = 1;
+        foo = 0;
+        foo = 1;
 
         // Testing bar
-        t.bar = 4;
-        t.bar = 3;
+        bar = 4;
+        bar = 3;
 
         // Testing baz
-        t.foo = 1;
-        t.baz = 2;
-        t.baz = 1;
+        foo = 1;
+        baz = 2;
+        baz = 1;
 
         // Testing quux
-        t.quux = "aa";
-        t.quux = "a";
+        quux = "aa";
+        quux = "a";
     }
 }

@@ -10,7 +10,7 @@
         <mkdir dir="${classes}"/>
     </target>
 
-    <!-- Compile the java code from ${src} into ${build} -->
+    <!-- Classpath definition -->
     <path id="classpath">
         <fileset dir="${classes}">
             <include name="*.classes"/>
@@ -20,6 +20,7 @@
         </fileset>
     </path>
 
+    <!-- Compile the java code from ${src} into ${build} -->
     <target name="compile" depends="init" description="compile the source" >
         <javac srcdir="${src}" destdir="${classes}" includeantruntime="false">
             <classpath refid="classpath"/>
@@ -33,7 +34,7 @@
     <!-- Runs the programs compiled -->
     <target name="run" depends="compile" description="runs the programs" >
         <java fork="true" classname="ist.meic.pa.CheckAssertions" classpath="${classes}">
-             <classpath refid="classpath"/>
+            <classpath refid="classpath"/>
             <arg value="ist.meic.pa.tests.${class}"/>
         </java>
     </target>
