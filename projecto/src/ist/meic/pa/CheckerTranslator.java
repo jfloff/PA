@@ -3,6 +3,7 @@ package ist.meic.pa;
 import java.lang.reflect.*;
 import java.lang.annotation.*;
 import javassist.*;
+import javassist.expr.*;
 
 public class CheckerTranslator implements Translator {
 
@@ -13,14 +14,26 @@ public class CheckerTranslator implements Translator {
 	public void onLoad(ClassPool pool, String className)
 		throws NotFoundException, CannotCompileException {
 
-		// Obtain the compile time class
 		CtClass cc = pool.get(className);
-		// Modify the class
-
-
-		// That's all. The class will now be automatically
-		// loaded from the modified byte code
+		checkerField(cc);
 	}
 
+    public void checkerField(CtClass ctClass) throws NotFoundException, CannotCompileException {
+	    final String template =
+	        "{" +
+	        "  Checker.checkField();" +
+	        "  $0.%s = $1;" +
+	        "}";
+	    for (CtMethod ctMethod : ctClass.getDeclaredMethods()) {
+	        ctMethod.instrument(new ExprEditor() {
+	            public void edit(FieldAccess fa) throws CannotCompileException {
+	                    if (fa.isWriter()) {
+	                        String name = fa.getFieldName();
+	                        fa.replace(String.format(template, name));
+	                    }
+	         	}
+	        });
+	    }
+	}
 }
 
