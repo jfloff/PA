@@ -19,25 +19,5 @@ public class CheckAssertions {
         String[] restArgs = new String[args.length - 1];
         System.arraycopy(args, 1, restArgs, 0, restArgs.length);
         classLoader.run(args[0], restArgs);
-
-        // parseAssertions(Class.forName(args[0]));
-    }
-
-    private static void parseAssertions(Class c){
-        if (c.getSuperclass() != null){
-            parseAssertions(c.getSuperclass());
-            for(Field f : c.getDeclaredFields()){
-                for (Annotation a : f.getAnnotations()) {
-                    String classname = a.annotationType().getName();
-                    System.out.println("FIELD ANNOT NAME = " + classname);
-                }
-            }
-            for(Method m : c.getDeclaredMethods()){
-                for (Annotation a : m.getAnnotations()) {
-                    String classname = a.annotationType().getName();
-                    System.out.println("METHOD ANNOT NAME = " + classname);
-                }
-            }
-        }
     }
 }

@@ -15,6 +15,7 @@ public class Test {
     String quux;
 
     {
+        foo++;
         bar=2;
         baz=3;
         bar+=2;
@@ -22,6 +23,7 @@ public class Test {
         bar++;
     }
 
+    @Assertion("($1>=0) && ($_>$1)")
     public void testing(){
         // Testing foo
         foo = 0;

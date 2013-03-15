@@ -12,9 +12,6 @@
 
     <!-- Classpath definition -->
     <path id="classpath">
-        <fileset dir="${classes}">
-            <include name="*.classes"/>
-        </fileset>
         <fileset dir="${lib}">
             <include name="javassist.jar"/>
         </fileset>
