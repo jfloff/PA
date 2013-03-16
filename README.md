@@ -22,6 +22,11 @@ Programacao Avancada
 
 ### Projecto 1
 *   **How to run in ant:** `ant -Dclass=<ClassName> run`
+*   Duvidas:
+    *   Detectar field initialization? (à nora)
+    *   Porque razao o getAnnotations não detecta o @Override? É por ser SOURCE retention?
+    *   Nas inherited assertions ele deve dar apenas 1 resultado certo? (and-chaining)
+    *   Assertions on method entry/return --> não estou a perceber como é para dividir
 
 ### Projecto 2
 

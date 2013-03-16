@@ -7,8 +7,6 @@ import javassist.expr.*;
 
 public class CheckerTranslator implements Translator {
 
-    final String methodTemplate = "ist.meic.pa.CheckerTranslator.evalExpr(%s);";
-
     public void start(ClassPool pool) throws NotFoundException, CannotCompileException {}
 
     public void onLoad(ClassPool pool, String className) throws NotFoundException, CannotCompileException {
@@ -23,37 +21,52 @@ public class CheckerTranslator implements Translator {
                     if (fa.isWriter()) {
                         try{
                             CtField field = fa.getField();
-                            Assertion a;
-                            if((a = getAssertion(field)) != null){
-                                final String faTemplate =   "{" +
-                                                            "  $0.%s = $1;" +
-                                                            "  ist.meic.pa.CheckerTranslator.evalExpr(%s);" +
-                                                            "}";
-                                fa.replace(String.format(faTemplate, fa.getFieldName(), a.value()));
+                            if(hasAssertion(field)){
+                                fa.replace("{ $0." + fa.getFieldName() + "=$1;" +
+                                    getEvalExprTemplate(getAssertionValue(field)) + " }");
                             }
                         } catch (NotFoundException e){}
                     }
                 }
             });
-            Assertion a;
             if(behavior instanceof CtMethod){
-                if((a = getAssertion(behavior)) != null){
-                    CtMethod m = (CtMethod) behavior;
+                CtMethod m = (CtMethod) behavior;
+                if(hasAssertion(m)){
                     String name = m.getName();
+                    String template = getEvalExprTemplate(inheritedAssertions(ctClass, name, m.getSignature()));
                     m.setName(name + "$original");
                     m = CtNewMethod.copy(m, name, ctClass, null);
                     m.setBody("return ($r)" + name + "$original($$);");
                     ctClass.addMethod(m);
-                    m.insertAfter("ist.meic.pa.CheckerTranslator.evalExpr(" + a.value() + ");");
+                    m.insertAfter(template);
                 }
             }
         }
     }
 
-    // Returns an Assertion if there is on, otherwise returns null
-    private Assertion getAssertion(CtMember member){
+    // Transverses the class tree to find out inherited assertions, 'and' chaining them
+    private String inheritedAssertions(CtClass ct, String name, String signature) throws CannotCompileException {
         try{
-            return (Assertion) member.getAnnotation(Assertion.class);
+            CtMethod mSuper = ct.getMethod(name, signature);
+            if(hasAssertion(mSuper)){
+                return getAssertionValue(mSuper) + " && " + inheritedAssertions(ct.getSuperclass(), name, signature);
+            }
+        } catch(NotFoundException e){}
+        return "true";
+    }
+
+    private String getEvalExprTemplate(String val){
+        return "ist.meic.pa.CheckerTranslator.evalExpr(" + val + ");";
+    }
+
+    private boolean hasAssertion(CtMember m){
+        return m.hasAnnotation(Assertion.class);
+    }
+
+    // Returns an Assertion if there is one, otherwise returns null
+    private String getAssertionValue(CtMember m){
+        try{
+            return ((Assertion) m.getAnnotation(Assertion.class)).value();
         } catch (ClassNotFoundException e){ return null; }
     }
 
