@@ -23,7 +23,7 @@ public class Test {
         bar++;
     }
 
-    public void testing(int x){
+    public void testing(){
         // Testing foo
         foo = 0;
         foo = 1;
@@ -42,7 +42,7 @@ public class Test {
         quux = "a";
     }
 
-    @Assertion("($1>=0) && ($_>$1)")
+    // @Assertion("($1>=0) && ($_>$1)")
     public int methodTest(int x){
         return ++x; // return TRUE
         // return x++; // return FALSE
@@ -50,8 +50,13 @@ public class Test {
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        Test t = new Test();
+        // Test t = new Test();
+        // t.testing();
 
-        t.methodTest(1);
+        // Base b = new Base();
+        // b.fooBar(1);
+
+        Derived d = new Derived();
+        d.fooBar(2);
     }
 }
