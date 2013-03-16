@@ -7,11 +7,7 @@ import javassist.expr.*;
 
 public class CheckerTranslator implements Translator {
 
-	final String template =
-	        "{" +
-	        "  $0.%s = $1;" +
-	        "  ist.meic.pa.CheckerTranslator.evalExpr(%s);" +
-	        "}";
+	final String methodTemplate = "ist.meic.pa.CheckerTranslator.evalExpr(%s);";
 
 	public void start(ClassPool pool) throws NotFoundException, CannotCompileException {}
 
@@ -23,13 +19,17 @@ public class CheckerTranslator implements Translator {
     public void checkBehaviors(CtClass ctClass) throws NotFoundException, CannotCompileException {
 	    for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
 	    	behavior.instrument(new ExprEditor() {
-	    		Assertion a;
 				public void edit(FieldAccess fa) throws CannotCompileException {
 	                if (fa.isWriter()) {
 	                	try{
 	                    	CtField field = fa.getField();
+	                    	Assertion a;
 		                    if((a = getAssertion(field)) != null){
-			                    fa.replace(String.format(template, fa.getFieldName(), a.value()));
+		                    	final String faTemplate =	"{" +
+															"  $0.%s = $1;" +
+													        "  ist.meic.pa.CheckerTranslator.evalExpr(%s);" +
+													        "}";
+			                    fa.replace(String.format(faTemplate, fa.getFieldName(), a.value()));
 		                    }
 	                	} catch (NotFoundException e){}
 	                }
@@ -38,7 +38,13 @@ public class CheckerTranslator implements Translator {
 	        Assertion a;
 	        if((a = getAssertion(behavior)) != null){
 		        if(behavior instanceof CtMethod){
-		        	behavior.insertAfter("System.out.println(\"OLA METODO\");");
+		        	CtMethod m = (CtMethod) behavior;
+		        	String name = m.getName();
+		        	m.setName(name + "$original");
+					m = CtNewMethod.copy(m, name, ctClass, null);
+					m.setBody("return ($r)" + name + "$original($$);");
+					ctClass.addMethod(m);
+					m.insertAfter("ist.meic.pa.CheckerTranslator.evalExpr(" + a.value() + ");");
 		        }
 	        }
 	    }
@@ -53,5 +59,9 @@ public class CheckerTranslator implements Translator {
 
 	public static void evalExpr(boolean expr) {
         System.out.println(expr);
+    }
+
+    public static void test(Object i){
+		System.out.println(i);
     }
 }

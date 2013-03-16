@@ -23,8 +23,7 @@ public class Test {
         bar++;
     }
 
-    @Assertion("($1>=0) && ($_>$1)")
-    public void testing(){
+    public void testing(int x){
         // Testing foo
         foo = 0;
         foo = 1;
@@ -43,10 +42,16 @@ public class Test {
         quux = "a";
     }
 
+    @Assertion("($1>=0) && ($_>$1)")
+    public int methodTest(int x){
+        return ++x; // return TRUE
+        // return x++; // return FALSE
+    }
+
     public static void main(String[] args) throws Exception, Throwable {
 
         Test t = new Test();
 
-        t.testing();
+        t.methodTest(1);
     }
 }
