@@ -9,4 +9,6 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.METHOD})
 public @interface Assertion {
     String value();
+    String entry() default "";
+    String exit() default "";
 }

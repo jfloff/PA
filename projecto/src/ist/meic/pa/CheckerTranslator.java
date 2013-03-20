@@ -1,5 +1,4 @@
 package ist.meic.pa;
-
 import java.lang.reflect.*;
 import java.lang.annotation.*;
 import javassist.*;
@@ -15,14 +14,27 @@ public class CheckerTranslator implements Translator {
     }
 
     public void checkBehaviors(CtClass ctClass) throws NotFoundException, CannotCompileException {
+        String setTemplate = "static java.util.HashSet $writes = new java.util.HashSet();";
         for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
+            // adds $writes hash to current class
+            if(getFieldByClassAndName(ctClass, "$writes") == null){
+                CtField writesField = CtField.make(setTemplate, ctClass);
+                ctClass.addField(writesField);
+            }
+            // goes trough all field accesses
             behavior.instrument(new ExprEditor() {
                 public void edit(FieldAccess fa) throws CannotCompileException {
-                    if (fa.isWriter()) {
-                        CtField field = fa.getField();
-                        if((field != null) && hasAssertion(field)){
-                            fa.replace("{ $0." + fa.getFieldName() + "=$1;" +
-                                getEvalExprTemplate(getAssertionValue(field)) + " }");
+                    CtField field = getFieldByFieldAccess(fa);
+                    if((field != null) && hasAssertion(field)){
+                        if (fa.isReader()){
+                            fa.replace("{ "
+                                + getInitTemplate("($writes.contains(($w) " + field.hashCode() + "))", field.getName())
+                                + "$_ = $proceed(); }");
+                        }
+                        if (fa.isWriter()) {
+                            fa.replace("{ $writes.add(($w) " + field.hashCode() + ");"
+                                + "$proceed($$);"
+                                + getEvalExprTemplate(getAssertionValue(field)) + " }");
                         }
                     }
                 }
@@ -31,14 +43,14 @@ public class CheckerTranslator implements Translator {
             if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
                 String name = m.getName();
-                String template = getEvalExprTemplate(inheritedAssertions(ctClass, name, m.getSignature()));
+                String expr = inheritedAssertions(ctClass, name, m.getSignature());
                 // if method has assertions in class tree
-                if(!template.equals(getEvalExprTemplate("true"))){
-                    m.setName(name + "$original");
+                if(!expr.equals("(true)")){
+                    m.setName(name + "$orig");
                     m = CtNewMethod.copy(m, name, ctClass, null);
-                    m.setBody("return ($r)" + name + "$original($$);");
+                    m.setBody("return ($r)" + name + "$orig($$);");
                     ctClass.addMethod(m);
-                    m.insertAfter(template);
+                    m.insertAfter(getEvalExprTemplate(expr));
                 }
             }
         }
@@ -51,12 +63,21 @@ public class CheckerTranslator implements Translator {
             String append = ((mSuper != null) && hasAssertion(mSuper)) ? getAssertionValue(mSuper) + " && " : "";
             return append + inheritedAssertions(getSuperclass(ct), name, signature);
         } else {
-            return "true";
+            return "(true)";
         }
     }
 
+    private String getInitTemplate(String val, String fieldName){
+        return exceptionTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
+    }
+
     private String getEvalExprTemplate(String val){
-        return "ist.meic.pa.CheckerTranslator.evalExpr(" + val + ");";
+        return exceptionTemplate(val, "\"The assertion \" + \""+ val + "\" + \" is \" + (" + val + ")");
+    }
+
+    private String exceptionTemplate(String val, String msg){
+        // return "if(!" + val + ") throw new RuntimeException(" + msg + ");";
+        return "System.out.println(" + msg + ");";
     }
 
     private boolean hasAssertion(CtMember m){
@@ -67,12 +88,22 @@ public class CheckerTranslator implements Translator {
     private String getAssertionValue(CtMember m){
         try{
             return "(" + ((Assertion) m.getAnnotation(Assertion.class)).value() + ")";
-        } catch (ClassNotFoundException e){ return null; }
+        } catch (ClassNotFoundException e){
+            return null;
+        }
     }
 
-    private CtField getField(FieldAccess fa){
+    private CtField getFieldByFieldAccess(FieldAccess fa){
         try{
             return fa.getField();
+        } catch (NotFoundException e){
+            return null;
+        }
+    }
+
+    private CtField getFieldByClassAndName(CtClass ct, String name){
+        try{
+            return ct.getField(name);
         } catch (NotFoundException e){
             return null;
         }
@@ -92,10 +123,5 @@ public class CheckerTranslator implements Translator {
         } catch (NotFoundException e){
             return null;
         }
-    }
-
-    // Method to inject to perform the expr evaluation
-    public static void evalExpr(boolean expr) {
-        System.out.println(expr);
     }
 }

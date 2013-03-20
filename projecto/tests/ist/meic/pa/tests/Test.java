@@ -1,12 +1,15 @@
 package ist.meic.pa.tests;
 import ist.meic.pa.Assertion;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Test {
 
     abstract class HelloWorld {
         abstract public void greetSomeone(String someone);
 
-        @Assertion("$1.length()>1") // --> ESTE FALHA
+        @Assertion("$1.length()>1")
         public void greet(String name){
             System.out.println("HAI" + name);
         }
@@ -24,7 +27,7 @@ public class Test {
     }
 
     @Assertion("foo>0")
-    public int foo;
+    int foo;
 
     @Assertion("bar%2==0")
     long bar;
@@ -38,21 +41,43 @@ public class Test {
     Spanish spanish;
 
     {
-        // foo = 2;
-        // foo = dub(foo);
-        // foo = dub(foo);
-        // foo = dub(foo);
-        // bar=2;
-        // baz=3;
-        // bar+=2;
-        // quux="foo";
-        // bar++;
+        foo++;
+        foo=2;
+        foo=dub(foo);
+        foo=dub(foo);
+        bar=2;
+        baz=3;
+        bar+=2;
+        quux="foo";
+        bar++;
         spanish = new Spanish();
     }
 
     @Assertion("$_==($1*2)")
     public static int dub(int x){
         return 2*x;
+    }
+
+    @Assertion("!$1.isEmpty()")
+    public static void m1(ArrayList l){
+        l.clear();
+    }
+
+    @Assertion("!$1.isEmpty()")
+    public static void m2(ArrayList l){
+        l = new ArrayList();
+    }
+
+    public static void mTest(){
+        ArrayList<Integer> array = new ArrayList<Integer>();
+
+        array.add(1);
+        array.add(2);
+        m1(array);
+
+        array.add(1);
+        array.add(2);
+        m2(array);
     }
 
     public void testing(){
@@ -82,8 +107,8 @@ public class Test {
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        Test t = new Test();
-        t.spanish.greetSomeone("aa");
+        // Test t = new Test();
+        // t.spanish.greetSomeone("aa");
 
         // t.testing();
 
@@ -93,7 +118,9 @@ public class Test {
         // Derived d = new Derived();
         // d.fooBar(0);
 
-        // Spanish p = new Spanish();
-        // p.greetSomeone("m");
+        // Base b1 = new Base();
+        // Base b2 = new Base();
+        // b2.init();
+        // b1.inc();
     }
 }
