@@ -19,17 +19,15 @@ public class CheckerTranslator implements Translator {
             behavior.instrument(new ExprEditor() {
                 public void edit(FieldAccess fa) throws CannotCompileException {
                     if (fa.isWriter()) {
-                        try{
-                            CtField field = fa.getField();
-                            if(hasAssertion(field)){
-                                fa.replace("{ $0." + fa.getFieldName() + "=$1;" +
-                                    getEvalExprTemplate(getAssertionValue(field)) + " }");
-                            }
-                        } catch (NotFoundException e){}
+                        CtField field = fa.getField();
+                        if((field != null) && hasAssertion(field)){
+                            fa.replace("{ $0." + fa.getFieldName() + "=$1;" +
+                                getEvalExprTemplate(getAssertionValue(field)) + " }");
+                        }
                     }
                 }
             });
-            // MAYBE MISSING ABSTRACTR (99.99% sure it is)
+            // if its a method and its not declared in an abstract or interface class
             if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
                 String name = m.getName();
@@ -46,7 +44,7 @@ public class CheckerTranslator implements Translator {
         }
     }
 
-        // Transverses the class tree to find out inherited assertions '&&' chaining them
+    // Transverses the class tree to find out inherited assertions '&&' chaining them
     private String inheritedAssertions(CtClass ct, String name, String signature) throws CannotCompileException {
         if(ct != null){
             CtMethod mSuper = getMethod(ct, name, signature);
@@ -54,6 +52,29 @@ public class CheckerTranslator implements Translator {
             return append + inheritedAssertions(getSuperclass(ct), name, signature);
         } else {
             return "true";
+        }
+    }
+
+    private String getEvalExprTemplate(String val){
+        return "ist.meic.pa.CheckerTranslator.evalExpr(" + val + ");";
+    }
+
+    private boolean hasAssertion(CtMember m){
+        return m.hasAnnotation(Assertion.class);
+    }
+
+    // Returns an Assertion if there is one, otherwise returns null
+    private String getAssertionValue(CtMember m){
+        try{
+            return "(" + ((Assertion) m.getAnnotation(Assertion.class)).value() + ")";
+        } catch (ClassNotFoundException e){ return null; }
+    }
+
+    private CtField getField(FieldAccess fa){
+        try{
+            return fa.getField();
+        } catch (NotFoundException e){
+            return null;
         }
     }
 
@@ -73,21 +94,7 @@ public class CheckerTranslator implements Translator {
         }
     }
 
-    private String getEvalExprTemplate(String val){
-        return "ist.meic.pa.CheckerTranslator.evalExpr(" + val + ");";
-    }
-
-    private boolean hasAssertion(CtMember m){
-        return m.hasAnnotation(Assertion.class);
-    }
-
-    // Returns an Assertion if there is one, otherwise returns null
-    private String getAssertionValue(CtMember m){
-        try{
-            return "(" + ((Assertion) m.getAnnotation(Assertion.class)).value() + ")";
-        } catch (ClassNotFoundException e){ return null; }
-    }
-
+    // Method to inject to perform the expr evaluation
     public static void evalExpr(boolean expr) {
         System.out.println(expr);
     }
