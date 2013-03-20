@@ -85,7 +85,7 @@ public class CheckerTranslator implements Translator {
     // Returns an Assertion if there is one, otherwise returns null
     private String getAssertionValue(CtMember m){
         try{
-            return "(" + ((Assertion) m.getAnnotation(Assertion.class)).value() + ")";
+            return ((Assertion) m.getAnnotation(Assertion.class)).value();
         } catch (ClassNotFoundException e){
             return null;
         }

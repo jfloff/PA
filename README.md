@@ -26,11 +26,14 @@ Programacao Avancada
 *   Duvidas:
 
 *   TO DO:
-    *   Mensagem de erro especifica para chained-assertions
     *   OUTRA CENA QUE O AVELAR E O PROF DISSE SOBRE 2 cenas nas assercoes
+        *   verificar as assertions de variaveis que estao noutra assertion
+            *   injectar codigo em codigo injectado
+
 
 *   Apontamentos:
 
+*   Extensão
         foo = 10:
         baz = 20:
         Assertion("baz > foo")
