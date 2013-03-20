@@ -2,8 +2,29 @@ package ist.meic.pa.tests;
 import ist.meic.pa.Assertion;
 
 public class Test {
+
+    abstract class HelloWorld {
+        abstract public void greetSomeone(String someone);
+
+        @Assertion("$1.length()>1") // --> ESTE FALHA
+        public void greet(String name){
+            System.out.println("HAI" + name);
+        }
+    }
+
+    class Spanish extends HelloWorld {
+        String name = "mundo";
+
+        // @Assertion("$1.length()>1")
+        public void greetSomeone(String someone) {
+            name = someone;
+            System.out.println("Hola, " + name);
+            super.greet(someone);
+        }
+    }
+
     @Assertion("foo>0")
-    int foo;
+    public int foo;
 
     @Assertion("bar%2==0")
     long bar;
@@ -14,13 +35,24 @@ public class Test {
     @Assertion("quux.length()>1")
     String quux;
 
+    Spanish spanish;
+
     {
-        foo++;
-        bar=2;
-        baz=3;
-        bar+=2;
-        quux="foo";
-        bar++;
+        // foo = 2;
+        // foo = dub(foo);
+        // foo = dub(foo);
+        // foo = dub(foo);
+        // bar=2;
+        // baz=3;
+        // bar+=2;
+        // quux="foo";
+        // bar++;
+        spanish = new Spanish();
+    }
+
+    @Assertion("$_==($1*2)")
+    public static int dub(int x){
+        return 2*x;
     }
 
     public void testing(){
@@ -50,13 +82,18 @@ public class Test {
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        // Test t = new Test();
+        Test t = new Test();
+        t.spanish.greetSomeone("aa");
+
         // t.testing();
 
         // Base b = new Base();
         // b.fooBar(1);
 
-        Derived d = new Derived();
-        d.fooBar(2);
+        // Derived d = new Derived();
+        // d.fooBar(0);
+
+        // Spanish p = new Spanish();
+        // p.greetSomeone("m");
     }
 }

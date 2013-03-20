@@ -27,6 +27,8 @@ Programacao Avancada
     *   Porque razao o getAnnotations não detecta o @Override? É por ser SOURCE retention?
     *   Nas inherited assertions ele deve dar apenas 1 resultado certo? (and-chaining)
     *   Assertions on method entry/return --> não estou a perceber como é para dividir
+    *   name + $$original ... e se h�� 1 metodo com esse nome??
+    *   O que fazer em assercoes sobre Classes (Foo.x e.g)
 
 ### Projecto 2
 

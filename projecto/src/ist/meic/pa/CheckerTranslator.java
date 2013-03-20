@@ -29,11 +29,13 @@ public class CheckerTranslator implements Translator {
                     }
                 }
             });
-            if(behavior instanceof CtMethod){
+            // MAYBE MISSING ABSTRACTR (99.99% sure it is)
+            if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
-                if(hasAssertion(m)){
-                    String name = m.getName();
-                    String template = getEvalExprTemplate(inheritedAssertions(ctClass, name, m.getSignature()));
+                String name = m.getName();
+                String template = getEvalExprTemplate(inheritedAssertions(ctClass, name, m.getSignature()));
+                // if method has assertions in class tree
+                if(!template.equals(getEvalExprTemplate("true"))){
                     m.setName(name + "$original");
                     m = CtNewMethod.copy(m, name, ctClass, null);
                     m.setBody("return ($r)" + name + "$original($$);");
@@ -44,15 +46,31 @@ public class CheckerTranslator implements Translator {
         }
     }
 
-    // Transverses the class tree to find out inherited assertions, 'and' chaining them
+        // Transverses the class tree to find out inherited assertions '&&' chaining them
     private String inheritedAssertions(CtClass ct, String name, String signature) throws CannotCompileException {
+        if(ct != null){
+            CtMethod mSuper = getMethod(ct, name, signature);
+            String append = ((mSuper != null) && hasAssertion(mSuper)) ? getAssertionValue(mSuper) + " && " : "";
+            return append + inheritedAssertions(getSuperclass(ct), name, signature);
+        } else {
+            return "true";
+        }
+    }
+
+    private CtMethod getMethod(CtClass ct, String name, String signature){
         try{
-            CtMethod mSuper = ct.getMethod(name, signature);
-            if(hasAssertion(mSuper)){
-                return getAssertionValue(mSuper) + " && " + inheritedAssertions(ct.getSuperclass(), name, signature);
-            }
-        } catch(NotFoundException e){}
-        return "true";
+            return ct.getMethod(name, signature);
+        } catch (NotFoundException e){
+            return null;
+        }
+    }
+
+    private CtClass getSuperclass(CtClass ct){
+        try{
+            return ct.getSuperclass();
+        } catch (NotFoundException e){
+            return null;
+        }
     }
 
     private String getEvalExprTemplate(String val){
