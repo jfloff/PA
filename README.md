@@ -22,29 +22,20 @@ Programacao Avancada
 
 ### Projecto 1
 *   **How to run in ant:** `ant -Dclass=<ClassName> run`
+
 *   Duvidas:
-    *   Nas inherited assertions ele deve dar apenas 1 resultado certo? (and-chaining)
-        *   Mensagem de erro especifica, embora t/f seja para tudo
-    *   Assertions on method entry/return --> não estou a perceber como é para dividir
-        *   Entry/Exit value
-    *   Quantas mensagens de erros devemos mandar na inicialização
 
-assertion("$1 > 0")
-void m(int 1)
-    throw new error()
+*   TO DO:
+    *   Mensagem de erro especifica para chained-assertions
+    *   OUTRA CENA QUE O AVELAR E O PROF DISSE SOBRE 2 cenas nas assercoes
 
+*   Apontamentos:
 
-A("a>0")
-m(Bar a){
-    a.x = 0;
-}
-
-foo = 10:
-baz = 20:
-
-Assertion("baz > foo")
-baz = foo
-foo = baz (falhar)
+        foo = 10:
+        baz = 20:
+        Assertion("baz > foo")
+        baz = foo
+        foo = baz (falhar)
 
 
 ### Projecto 2

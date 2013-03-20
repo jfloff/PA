@@ -115,8 +115,8 @@ public class Test {
         // Base b = new Base();
         // b.fooBar(1);
 
-        // Derived d = new Derived();
-        // d.fooBar(0);
+        Derived d = new Derived();
+        d.fooBar(0);
 
         // Base b1 = new Base();
         // Base b2 = new Base();

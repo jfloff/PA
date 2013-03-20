@@ -43,39 +43,37 @@ public class CheckerTranslator implements Translator {
             if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
                 String name = m.getName();
-                String expr = inheritedAssertions(ctClass, name, m.getSignature());
-                // if method has assertions in class tree
-                if(!expr.equals("(true)")){
+                String templates = inheritedAssertions(ctClass, name, m.getSignature());
+                if(!templates.isEmpty()){
                     m.setName(name + "$orig");
                     m = CtNewMethod.copy(m, name, ctClass, null);
                     m.setBody("return ($r)" + name + "$orig($$);");
                     ctClass.addMethod(m);
-                    m.insertAfter(getEvalExprTemplate(expr));
+                    m.insertAfter(templates);
                 }
             }
         }
     }
 
-    // Transverses the class tree to find out inherited assertions '&&' chaining them
-    private String inheritedAssertions(CtClass ct, String name, String signature) throws CannotCompileException {
+    // Transverses the class tree concatenating all the code injections for each assertion
+    private String inheritedAssertions(CtClass ct, String name, String signature){
         if(ct != null){
-            CtMethod mSuper = getMethod(ct, name, signature);
-            String append = ((mSuper != null) && hasAssertion(mSuper)) ? getAssertionValue(mSuper) + " && " : "";
+            CtMethod m = getMethod(ct, name, signature);
+            String append = ((m != null) && hasAssertion(m))? getEvalExprTemplate(getAssertionValue(m)) : "";
             return append + inheritedAssertions(getSuperclass(ct), name, signature);
-        } else {
-            return "(true)";
         }
+        return "";
     }
 
     private String getInitTemplate(String val, String fieldName){
-        return exceptionTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
+        return masterTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
     }
 
     private String getEvalExprTemplate(String val){
-        return exceptionTemplate(val, "\"The assertion \" + \""+ val + "\" + \" is \" + (" + val + ")");
+        return masterTemplate(val, "\"The assertion \" + \""+ val + "\" + \" is \" + (" + val + ")");
     }
 
-    private String exceptionTemplate(String val, String msg){
+    private String masterTemplate(String val, String msg){
         // return "if(!" + val + ") throw new RuntimeException(" + msg + ");";
         return "System.out.println(" + msg + ");";
     }
