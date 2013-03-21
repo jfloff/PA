@@ -108,20 +108,25 @@ public class Test {
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        Test t = new Test();
-        t.spanish.greetSomeone("aa");
+        // Test t = new Test();
+        // t.spanish.greetSomeone("aa");
 
-        t.testing();
+        // t.testing();
 
-        Base b = new Base();
-        b.fooBar(1);
+        // Base b = new Base();
+        // b.fooBar(1);
 
-        Derived d = new Derived();
-        d.fooBar(0);
+        // Derived d = new Derived();
+        // d.fooBar(0);
 
-        Base b1 = new Base();
-        Base b2 = new Base();
-        b2.init();
-        b1.inc();
+        // Cons c = new Cons(0);
+        Cons c = new Cons("o");
+
+        // new Metho().m(new Object());
+
+        // Base b1 = new Base();
+        // Base b2 = new Base();
+        // b2.init();
+        // b1.inc();
     }
 }

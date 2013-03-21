@@ -25,12 +25,19 @@ public class CheckerTranslator implements Translator {
                 String name = m.getName();
                 String templates = inheritedAssertions(ctClass, name, m.getSignature());
                 if(!templates.isEmpty()){
-                    m.setName(name + "$orig");
+                    String newName = "m$" + Math.abs(m.hashCode());
+                    m.setName(newName);
                     m = CtNewMethod.copy(m, name, ctClass, null);
-                    m.setBody("return ($r)" + name + "$orig($$);");
+                    m.setBody("return ($r)" + newName + "($$);");
                     ctClass.addMethod(m);
                     m.insertAfter(templates);
+                    // insert after exit value + templates [ENTRY_VAL, templates]
+                    // insert before entry value + templates
                 }
+            }
+            if((behavior instanceof CtConstructor) && hasAssertion(behavior)){
+                CtConstructor c = (CtConstructor) behavior;
+                c.insertBeforeBody(getExprTemplate(getAssertionValue(c)));
             }
         }
     }
@@ -53,7 +60,7 @@ public class CheckerTranslator implements Translator {
                     if (fa.isWriter()) {
                         fa.replace( "$proceed($$);"
                             + "$writes.add(($w) " + field.hashCode() + ");"
-                            + getEvalExprTemplate(getAssertionValue(field)));
+                            + getExprTemplate(getAssertionValue(field)));
                     }
                 }
             }
@@ -71,7 +78,7 @@ public class CheckerTranslator implements Translator {
     private String inheritedAssertions(CtClass ct, String name, String signature){
         if(ct != null){
             CtMethod m = getMethod(ct, name, signature);
-            String append = ((m != null) && hasAssertion(m))? getEvalExprTemplate(getAssertionValue(m)) : "";
+            String append = ((m != null) && hasAssertion(m))? getExprTemplate(getAssertionValue(m)) : "";
             return append + inheritedAssertions(getSuperclass(ct), name, signature);
         }
         return "";
@@ -81,7 +88,7 @@ public class CheckerTranslator implements Translator {
         return masterTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
     }
 
-    private String getEvalExprTemplate(String val){
+    private String getExprTemplate(String val){
         return masterTemplate(val, "\"The assertion \" + \""+ val + "\" + \" is \" + (" + val + ")");
     }
 
