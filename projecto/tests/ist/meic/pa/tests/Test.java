@@ -120,9 +120,9 @@ public class Test {
         // d.fooBar(0);
 
         // Cons c = new Cons(0);
-        Cons c = new Cons("o");
+        // Cons c = new Cons("o");
 
-        // new Metho().m(new Object());
+        new Metho().m(new Object());
 
         // Base b1 = new Base();
         // Base b2 = new Base();

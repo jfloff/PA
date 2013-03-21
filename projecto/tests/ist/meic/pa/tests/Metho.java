@@ -11,7 +11,10 @@ class Metho {
         return old;
     }
 
-    @Assertion("$1 != getAndClear()")
+    @Assertion(
+        value="$1 != getAndClear()",
+        entry="true"
+    )
     public void m(Object o) {
         o.toString();
     }
