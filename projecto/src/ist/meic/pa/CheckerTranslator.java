@@ -11,34 +11,14 @@ public class CheckerTranslator implements Translator {
     public void onLoad(ClassPool pool, String className) throws NotFoundException, CannotCompileException {
         CtClass cc = pool.get(className);
         checkBehaviors(cc);
+        reCheckFields(cc);
     }
 
+    String setTemplate = "static java.util.HashSet $writes = new java.util.HashSet();";
+
     public void checkBehaviors(CtClass ctClass) throws NotFoundException, CannotCompileException {
-        String setTemplate = "static java.util.HashSet $writes = new java.util.HashSet();";
         for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
-            // adds $writes hash to current class
-            if(getFieldByClassAndName(ctClass, "$writes") == null){
-                CtField writesField = CtField.make(setTemplate, ctClass);
-                ctClass.addField(writesField);
-            }
-            // goes trough all field accesses
-            behavior.instrument(new ExprEditor() {
-                public void edit(FieldAccess fa) throws CannotCompileException {
-                    CtField field = getFieldByFieldAccess(fa);
-                    if((field != null) && hasAssertion(field)){
-                        if (fa.isReader()){
-                            fa.replace("{ "
-                                + getInitTemplate("($writes.contains(($w) " + field.hashCode() + "))", field.getName())
-                                + "$_ = $proceed(); }");
-                        }
-                        if (fa.isWriter()) {
-                            fa.replace("{ $writes.add(($w) " + field.hashCode() + ");"
-                                + "$proceed($$);"
-                                + getEvalExprTemplate(getAssertionValue(field)) + " }");
-                        }
-                    }
-                }
-            });
+            checkFieldAccess(ctClass, behavior);
             // if its a method and its not declared in an abstract or interface class
             if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
@@ -54,6 +34,38 @@ public class CheckerTranslator implements Translator {
             }
         }
     }
+
+    private void checkFieldAccess(CtClass ct, CtBehavior behavior) throws NotFoundException, CannotCompileException {
+        // adds field access '$writes' hash to current class to check variable access
+        if(getFieldByClassAndName(ct, "$writes") == null){
+            CtField writesField = CtField.make(setTemplate, ct);
+            ct.addField(writesField);
+        }
+        // injects code to check assertion and initialization
+        behavior.instrument(new ExprEditor() {
+            public void edit(FieldAccess fa) throws CannotCompileException {
+                CtField field = getFieldByFieldAccess(fa);
+                if((field != null) && hasAssertion(field)){
+                    if (fa.isReader()){
+                        fa.replace(getInitTemplate("$writes.contains(($w) " + field.hashCode() + ")", field.getName())
+                            + "$_ = $proceed();");
+                    }
+                    if (fa.isWriter()) {
+                        fa.replace( "$proceed($$);"
+                            + "$writes.add(($w) " + field.hashCode() + ");"
+                            + getEvalExprTemplate(getAssertionValue(field)));
+                    }
+                }
+            }
+        });
+    }
+
+    private void reCheckFields(CtClass ctClass) throws NotFoundException, CannotCompileException {
+        for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
+            checkFieldAccess(ctClass, behavior);
+        }
+    }
+
 
     // Transverses the class tree concatenating all the code injections for each assertion
     private String inheritedAssertions(CtClass ct, String name, String signature){
@@ -75,7 +87,7 @@ public class CheckerTranslator implements Translator {
 
     private String masterTemplate(String val, String msg){
         // return "if(!" + val + ") throw new RuntimeException(" + msg + ");";
-        return "System.out.println(" + msg + ");";
+        return "if(!(" + val + ")) System.out.println(" + msg + ");";
     }
 
     private boolean hasAssertion(CtMember m){

@@ -26,14 +26,14 @@ public class Test {
         }
     }
 
-    @Assertion("foo>0")
+    @Assertion("true")
     int foo;
-
-    @Assertion("bar%2==0")
-    long bar;
 
     @Assertion("baz>foo")
     int baz;
+
+    @Assertion("bar%2==0")
+    long bar;
 
     @Assertion("quux.length()>1")
     String quux;
@@ -41,6 +41,7 @@ public class Test {
     Spanish spanish;
 
     {
+        baz = 3;
         foo++;
         foo=2;
         foo=dub(foo);
@@ -107,20 +108,20 @@ public class Test {
 
     public static void main(String[] args) throws Exception, Throwable {
 
-        // Test t = new Test();
-        // t.spanish.greetSomeone("aa");
+        Test t = new Test();
+        t.spanish.greetSomeone("aa");
 
-        // t.testing();
+        t.testing();
 
-        // Base b = new Base();
-        // b.fooBar(1);
+        Base b = new Base();
+        b.fooBar(1);
 
         Derived d = new Derived();
         d.fooBar(0);
 
-        // Base b1 = new Base();
-        // Base b2 = new Base();
-        // b2.init();
-        // b1.inc();
+        Base b1 = new Base();
+        Base b2 = new Base();
+        b2.init();
+        b1.inc();
     }
 }
