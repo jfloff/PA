@@ -96,12 +96,11 @@ public class CheckerTranslator implements Translator {
     }
     private String getEntryTemplate(String[] val){
         return masterTemplate(val[1], String.format(msgTemplate, val[1], val[1]));
-
     }
 
     private String masterTemplate(String val, String msg){
         // return "if(!" + val + ") throw new RuntimeException(" + msg + ");";
-        return "if(!(" + val + ")) System.out.println(" + msg + "); ";
+        return (!val.isEmpty()) ? "if(!(" + val + ")) System.out.println(" + msg + "); " : "";
     }
 
     private boolean hasAssertion(CtMember m){

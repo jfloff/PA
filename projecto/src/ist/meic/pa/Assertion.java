@@ -5,5 +5,5 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface Assertion {
     String value() default "true";
-    String entry() default "true";
+    String entry() default "";
 }

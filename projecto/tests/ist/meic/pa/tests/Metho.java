@@ -6,9 +6,8 @@ class Metho {
     Object o = new String("OLA");
 
     public Object getAndClear() {
-        Object old = this.o;
         this.o = null;
-        return old;
+        return this.o;
     }
 
     @Assertion(
