@@ -4,6 +4,7 @@
     <property name="classes" location="classes"/>
     <property name="tests" location="tests"/>
     <property name="lib" location="lib"/>
+    <property name="jarname" value="checkassertions.jar"/>
 
     <!-- Create the ${classes} directory structure used by compile -->
     <target name="init" depends="clean" description="create directories">
@@ -37,11 +38,12 @@
     </target>
 
     <target name="jar" depends="compile" description="makes jar for this program" >
-          <jar destfile="checkassertions.jar" basedir="${classes}" excludes=""/>
+          <jar destfile="${jarname}" excludes=""/>
     </target>
 
     <!-- Delete classes and lib folders -->
     <target name="clean" description="clean up" >
         <delete dir="${classes}"/>
+        <delete file="${jarname}"/>
     </target>
 </project>
