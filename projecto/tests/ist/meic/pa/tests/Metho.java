@@ -3,19 +3,19 @@ import ist.meic.pa.Assertion;
 
 class Metho {
 
-    Object o = new Object();
+    Object o = new String("OLA");
 
     public Object getAndClear() {
-        Object old = o;
-        o = null;
+        Object old = this.o;
+        this.o = null;
         return old;
     }
 
     @Assertion(
-        value="$1 != getAndClear()",
-        entry="true"
+        value="getAndClear() != null",
+        entry="getAndClear() != null"
     )
-    public void m(Object o) {
-        o.toString();
+    public void m() {
+        System.out.println(this.o.toString());
     }
 }

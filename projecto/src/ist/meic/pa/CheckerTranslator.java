@@ -3,6 +3,7 @@ import java.lang.reflect.*;
 import java.lang.annotation.*;
 import javassist.*;
 import javassist.expr.*;
+import java.util.Arrays;
 
 public class CheckerTranslator implements Translator {
 
@@ -14,8 +15,6 @@ public class CheckerTranslator implements Translator {
         reCheckFields(cc);
     }
 
-    String setTemplate = "static java.util.HashSet $writes = new java.util.HashSet();";
-
     public void checkBehaviors(CtClass ctClass) throws NotFoundException, CannotCompileException {
         for (CtBehavior behavior : ctClass.getDeclaredBehaviors()){
             checkFieldAccess(ctClass, behavior);
@@ -23,16 +22,15 @@ public class CheckerTranslator implements Translator {
             if(!javassist.Modifier.isInterface(ctClass.getModifiers()) && (behavior instanceof CtMethod)){
                 CtMethod m = (CtMethod) behavior;
                 String name = m.getName();
-                String templates = inheritedAssertions(ctClass, name, m.getSignature());
-                if(!templates.isEmpty()){
+                String[] templates = inheritedAssertions(ctClass, name, m.getSignature());
+                if(!Arrays.equals(templates, new String[]{"", ""})){
                     String newName = "m$" + Math.abs(m.hashCode());
                     m.setName(newName);
                     m = CtNewMethod.copy(m, name, ctClass, null);
                     m.setBody("return ($r)" + newName + "($$);");
                     ctClass.addMethod(m);
-                    m.insertAfter(templates);
-                    // insert after exit value + templates [ENTRY_VAL, templates]
-                    // insert before entry value + templates
+                    m.insertBefore(templates[1]);
+                    m.insertAfter(templates[0]);
                 }
             }
             if((behavior instanceof CtConstructor) && hasAssertion(behavior)){
@@ -42,9 +40,10 @@ public class CheckerTranslator implements Translator {
         }
     }
 
+    final String setTemplate = "static java.util.HashSet f$writes = new java.util.HashSet();";
     private void checkFieldAccess(CtClass ct, CtBehavior behavior) throws NotFoundException, CannotCompileException {
-        // adds field access '$writes' hash to current class to check variable access
-        if(getFieldByClassAndName(ct, "$writes") == null){
+        // adds field access 'f$writes' hash to current class to check variable access
+        if(getFieldByClassAndName(ct, "f$writes") == null){
             CtField writesField = CtField.make(setTemplate, ct);
             ct.addField(writesField);
         }
@@ -54,12 +53,12 @@ public class CheckerTranslator implements Translator {
                 CtField field = getFieldByFieldAccess(fa);
                 if((field != null) && hasAssertion(field)){
                     if (fa.isReader()){
-                        fa.replace(getInitTemplate("$writes.contains(($w) " + field.hashCode() + ")", field.getName())
+                        fa.replace(getInitTemplate("f$writes.contains(($w) " + field.hashCode() + ")", field.getName())
                             + "$_ = $proceed();");
                     }
                     if (fa.isWriter()) {
                         fa.replace( "$proceed($$);"
-                            + "$writes.add(($w) " + field.hashCode() + ");"
+                            + "f$writes.add(($w) " + field.hashCode() + ");"
                             + getExprTemplate(getAssertionValue(field)));
                     }
                 }
@@ -73,28 +72,36 @@ public class CheckerTranslator implements Translator {
         }
     }
 
-
-    // Transverses the class tree concatenating all the code injections for each assertion
-    private String inheritedAssertions(CtClass ct, String name, String signature){
+    // Returns array with all class-tree value assertions in the first position and entry in the second position
+    private String[] inheritedAssertions(CtClass ct, String name, String signature){
         if(ct != null){
+            String[] result = inheritedAssertions(getSuperclass(ct), name, signature);
             CtMethod m = getMethod(ct, name, signature);
-            String append = ((m != null) && hasAssertion(m))? getExprTemplate(getAssertionValue(m)) : "";
-            return append + inheritedAssertions(getSuperclass(ct), name, signature);
+            if((m != null) && hasAssertion(m)){
+                result[0] += getExprTemplate(getAssertionValue(m));
+                result[1] += getEntryTemplate(getAssertionValue(m));
+            }
+            return result;
         }
-        return "";
+        return new String[] {"", ""};
     }
 
     private String getInitTemplate(String val, String fieldName){
         return masterTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
     }
 
-    private String getExprTemplate(String val){
-        return masterTemplate(val, "\"The assertion \" + \""+ val + "\" + \" is \" + (" + val + ")");
+    final String msgTemplate = "\"The assertion \" + \"%s\" + \" is \" + (%s)";
+    private String getExprTemplate(String[] val){
+        return masterTemplate(val[0], String.format(msgTemplate, val[0], val[0]));
+    }
+    private String getEntryTemplate(String[] val){
+        return masterTemplate(val[1], String.format(msgTemplate, val[1], val[1]));
+
     }
 
     private String masterTemplate(String val, String msg){
         // return "if(!" + val + ") throw new RuntimeException(" + msg + ");";
-        return "if(!(" + val + ")) System.out.println(" + msg + ");";
+        return "if(!(" + val + ")) System.out.println(" + msg + "); ";
     }
 
     private boolean hasAssertion(CtMember m){
@@ -102,9 +109,10 @@ public class CheckerTranslator implements Translator {
     }
 
     // Returns an Assertion if there is one, otherwise returns null
-    private String getAssertionValue(CtMember m){
+    private String[] getAssertionValue(CtMember m){
         try{
-            return ((Assertion) m.getAnnotation(Assertion.class)).value();
+            Assertion a = (Assertion) m.getAnnotation(Assertion.class);
+            return new String[] { a.value(), a.entry() };
         } catch (ClassNotFoundException e){
             return null;
         }
