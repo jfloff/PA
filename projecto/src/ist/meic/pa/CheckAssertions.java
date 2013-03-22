@@ -61,7 +61,8 @@ public class CheckAssertions {
                     CtField field = getFieldByFieldAccess(fa);
                     if((field != null) && hasAssertion(field)){
                         if (fa.isReader()){
-                            fa.replace(getInitTemplate("f$writes.contains(($w) " + field.hashCode() + ")", field.getName())
+                            fa.replace(
+                                getInitTemplate("f$writes.contains(($w) " + field.hashCode() + ")", field.getName())
                                 + "$_ = $proceed(); ");
                         }
                         if (fa.isWriter()) {
@@ -161,7 +162,7 @@ public class CheckAssertions {
     }
 
     public static void main(String[] args) throws Exception, Throwable {
-        if(args.length != 1) {
+        if(args.length < 1) {
             System.err.println("[ERROR] Invalid command line: one and one only filename expected");
             System.exit(1);
         }
