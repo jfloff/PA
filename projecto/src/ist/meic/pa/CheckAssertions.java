@@ -34,7 +34,7 @@ public class CheckAssertions {
                         method.setBody("return ($r)" + newName + "($$);");
                         clazz.addMethod(method);
                         method.insertBefore(templates[1]);
-                        method.insertAfter(templates[0]);
+                        method.insertAfter(templates[0], true);
                     }
                 }
                 // Support for constructors assertions
