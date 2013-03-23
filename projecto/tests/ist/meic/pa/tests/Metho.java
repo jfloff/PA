@@ -6,13 +6,12 @@ class Metho {
     Object o = new String("OLA");
 
     public Object getAndClear() {
-        this.o = null;
-        return this.o;
+        return this.o = null;
     }
 
     @Assertion(
         value="getAndClear() != null",
-        entry="getAndClear() != null"
+        entry="getAndClear() == null"
     )
     public void m() {
         System.out.println(this.o.toString());
