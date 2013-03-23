@@ -119,7 +119,8 @@ public class Test {
         Derived d = new Derived();
         d.fooBar(0);
 
-        Cons c = new Cons(0);
+        StaticCons sc = new StaticCons();
+        Cons c = new Cons(1);
         c = new Cons("o");
 
         try{
