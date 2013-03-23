@@ -22,23 +22,7 @@ Programacao Avancada
 
 ### Projecto 1
 *   **How to run in ant:** `ant -Dclass=<ClassName> run`
-
-*   Duvidas:
-
-*   TO DO:
-    *   OUTRA CENA QUE O AVELAR E O PROF DISSE SOBRE 2 cenas nas assercoes
-        *   verificar as assertions de variaveis que estao noutra assertion
-            *   injectar codigo em codigo injectado
-
-
-*   Apontamentos:
-
-*   Extensão
-        foo = 10:
-        baz = 20:
-        Assertion("baz > foo")
-        baz = foo
-        foo = baz (falhar)
+*   Apresentação: http://jfloff.github.com/PA/
 
 
 ### Projecto 2
