@@ -38,8 +38,10 @@
     </target>
 
     <target name="jar" depends="compile" description="makes jar for this program" >
-          <jar destfile="${jarname}" excludes=""/>
+        <jar destfile="${jarname}" basedir="${classes}" excludes="ist/meic/pa/tests/Test.class" />
     </target>
+
+
 
     <!-- Delete classes and lib folders -->
     <target name="clean" description="clean up" >
