@@ -38,7 +38,11 @@
     </target>
 
     <target name="jar" depends="compile" description="makes jar for this program" >
-        <jar destfile="${jarname}" basedir="${classes}" excludes="ist/meic/pa/tests/Test.class" />
+        <jar destfile="${jarname}" basedir="${classes}" excludes="ist/meic/pa/tests/*.class">
+            <manifest>
+                <attribute name="Main-Class" value="ist.meic.pa.CheckAssertions"/>
+            </manifest>
+        </jar>
     </target>
 
 
