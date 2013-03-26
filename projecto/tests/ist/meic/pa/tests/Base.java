@@ -10,4 +10,9 @@ class Base {
     public int fooBar(int x) {
         return ++x;
     }
+
+    @Assertion("true")
+    public void test(){
+
+    }
 }
