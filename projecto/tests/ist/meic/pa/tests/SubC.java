@@ -22,8 +22,6 @@ public class SubC extends SuperC {
 
 		@Assertion("($1 + $2) > 0")
 		public int test1(int i1, int i2) {
-			System.out.println((i1 + i2) > 0);
-			System.out.println((i2 % 2) == 1);
 			//this.test1(i1);
 			//super.test1(i2);
 			//System.out.println(arroz);
@@ -35,7 +33,7 @@ public class SubC extends SuperC {
 
 		@Assertion("$_ > 0")
 		public int test2() {
-			return _t1++;
+			return ++_t1;
 		}
 
 		public int test2(int i) {

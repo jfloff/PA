@@ -1,5 +1,4 @@
 package ist.meic.pa;
-
 import java.lang.reflect.*;
 import java.lang.annotation.*;
 import javassist.*;
@@ -21,17 +20,15 @@ public class CheckAssertions {
         // check all behaviors supported by assertion
         public void checkBehaviors(CtClass clazz) throws NotFoundException, CannotCompileException {
             for (CtBehavior behavior : clazz.getDeclaredBehaviors()){
-                checkFieldAccess(clazz, behavior);
                 // if its a method and its not declared in an abstract or interface class
                 if(!javassist.Modifier.isInterface(clazz.getModifiers()) && (behavior instanceof CtMethod)){
                     CtMethod method = (CtMethod) behavior;
                     String name = method.getName();
                     String[] templates = inheritedAssertions(clazz, name, method.getSignature());
                     if(!Arrays.equals(templates, new String[]{"", ""})){
-                        String newName = "m$" + Math.abs(method.hashCode());
-                        method.setName(newName);
+                        method.setName(wrapperMethodName(name));
                         method = CtNewMethod.copy(method, name, clazz, null);
-                        method.setBody("return ($r)" + newName + "($$);");
+                        method.setBody("return ($r)" + wrapperMethodName(name) + "($$);");
                         clazz.addMethod(method);
                         method.insertBefore(templates[1]);
                         method.insertAfter(templates[0], true);
@@ -110,8 +107,7 @@ public class CheckAssertions {
         }
 
         private String abstractTemplate(String val, String msg){
-            // return (!val.isEmpty()) ? "if(!" + val + ") throw new RuntimeException(" + msg + ");" : "";
-            return (!val.isEmpty()) ? "if(!(" + val + ")) System.out.println(" + msg + "); " : "";
+            return (!val.isEmpty()) ? "if(!(" + val + ")) throw new RuntimeException(" + msg + ");" : "";
         }
 
         private boolean hasAssertion(CtMember member){
@@ -144,11 +140,20 @@ public class CheckAssertions {
             }
         }
 
+        private String wrapperMethodName(String methodName){
+            return "m$" + methodName + "$wrapped";
+        }
+
+        // first tries to get wrapped method, if it wasn't found returns the "original" method
         private CtMethod getMethod(CtClass clazz, String methodName, String methodSignature){
-            try{
-                return clazz.getMethod(methodName, methodSignature);
+            try {
+                return clazz.getMethod(wrapperMethodName(methodName), methodSignature);
             } catch (NotFoundException e){
-                return null;
+                try{
+                    return clazz.getMethod(methodName, methodSignature);
+                } catch (NotFoundException ex){
+                    return null;
+                }
             }
         }
 
@@ -166,7 +171,6 @@ public class CheckAssertions {
             System.err.println("[ERROR] Invalid command line: one and one only filename expected");
             System.exit(1);
         }
-
         Loader classLoader = new Loader();
         classLoader.addTranslator(ClassPool.getDefault(), new CheckerTranslator());
         String[] restArgs = new String[args.length - 1];

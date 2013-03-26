@@ -1,7 +1,7 @@
 package ist.meic.pa.tests;
 import ist.meic.pa.Assertion;
 
-public class Basic {
+public class Basic extends Base {
 
     static class SubBasic extends Basic {
 
