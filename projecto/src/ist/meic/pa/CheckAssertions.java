@@ -20,6 +20,7 @@ public class CheckAssertions {
         // check all behaviors supported by assertion
         public void checkBehaviors(CtClass clazz) throws NotFoundException, CannotCompileException {
             for (CtBehavior behavior : clazz.getDeclaredBehaviors()){
+                checkFieldAccess(clazz, behavior);
                 // if its a method and its not declared in an abstract or interface class
                 if(!javassist.Modifier.isInterface(clazz.getModifiers()) && (behavior instanceof CtMethod)){
                     CtMethod method = (CtMethod) behavior;
@@ -59,7 +60,7 @@ public class CheckAssertions {
                     if((field != null) && hasAssertion(field)){
                         if (fa.isReader()){
                             fa.replace(
-                                getInitTemplate("f$writes.contains(($w) " + field.hashCode() + ")", field.getName())
+                                initTemplate("f$writes.contains(($w) " + field.hashCode() + ")", field.getName())
                                 + "$_ = $proceed(); ");
                         }
                         if (fa.isWriter()) {
@@ -86,14 +87,14 @@ public class CheckAssertions {
                 CtMethod method = getMethod(clazz, methodName, methodSignature);
                 if((method != null) && hasAssertion(method)){
                     templates[0] += exprTemplate(getAssertionValues(method));
-                    templates[1] += getEntryTemplate(getAssertionValues(method));
+                    templates[1] += entryTemplate(getAssertionValues(method));
                 }
                 return templates;
             }
             return new String[] {"", ""};
         }
 
-        private String getInitTemplate(String val, String fieldName){
+        private String initTemplate(String val, String fieldName){
             return abstractTemplate(val, "\"Error: " + fieldName + " was not initialized\"");
         }
 
@@ -102,7 +103,7 @@ public class CheckAssertions {
             return abstractTemplate(val[0], String.format(msgFormat, val[0], val[0]));
         }
 
-        private String getEntryTemplate(String[] val){
+        private String entryTemplate(String[] val){
             return abstractTemplate(val[1], String.format(msgFormat, val[1], val[1]));
         }
 
