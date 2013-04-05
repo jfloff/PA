@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Improving the Java Type System</title>
+        <link rel="stylesheet" href="css/reveal.min.css">
+
+        <link rel="stylesheet" href="css/theme/solarized.css" id="theme">
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/railscasts.css">
+        <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+        <!-- <link rel="stylesheet" href="css/print/pdf.css"> -->
+        <script>
+            document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'pdf' ) + '.css" type="text/css" media="print">' );
+        </script>
+        <!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="reveal">
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+
+                <section>
+                    <h1>Improving the Java Type System</h1>
+                    <br>
+                    <p>
+                        <small>
+                            João Loff - 56960<br>
+                            Alexandre Almeida - 64712<br>
+                            Tiago Aguiar - 64870
+                        </small>
+                    </p>
+
+                    <aside class="notes">
+                        Focamo-nos mais em mostrar a nossa solução, e não tanto o código que gerou a nossa solução.
+                        De referir também que o código apresentado não é exactamente o mesmo que está no projecto. Está adaptado para ser mostrado em slides.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Behaviors</h2>
+                    <small>
+                        <blockquote>CtBehavior represents a method, a constructor, or a static constructor</blockquote>
+                    </small>
+                    <div class="fragment">
+                        <br>
+<pre><code class="java">for (CtBehavior behavior : clazz.getDeclaredBehaviors()){
+
+    behavior.instrument(new ExprEditor() { ... });
+
+    if(behavior instanceof CtMethod) { ...}
+
+    if(behavior instanceof CtConstructor) { ... }
+}
+</code></pre>
+                        <br>
+                        <h2 class="fragment"> 180 LoC </h2>
+                    </div>
+
+                    <aside class="notes">
+                        Usando behaviors permitiu ter um código mais abstracto para as funcionalidades comuns - percorrer todos os fields - mas permitiu depois especializar comportamento para casos especiais
+                        Parte do comportamento do getDeclaredBehaviors é a actualização dinâmica da loaded ctClass
+                        Esta escolha resultou num codigo bastante compacto que na sua totalidade conta com 180 linhas de código.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Field Initialization</h2>
+                    <br>
+                    <p>We start with:</p>
+<pre><code class="java">@Assertion("true")
+int foo;
+
+foo++;
+</code></pre>
+                    <div class="fragment">
+                        <p>We end up with:</p>
+<pre><code class="java">static java.util.HashSet f$writes = new java.util.HashSet();
+
+@Assertion("true")
+int foo;
+
+if(!f$writes.contains(foo_hash_code)) //...
+foo++
+f$writes.add(foo_hash_code);
+if(!(true)) //...
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+                        Em termos de assertions em fields, o maior desafio foi a verificação da inicialização. Resolvemo-la em três simples passos.
+                        Primeiro injectamos um HashSet que irá guardar os fields nos quais já foram feitos writes
+                        Podemos verificar aqui que ao executar um write, introduzimos um add no HashSet antes de verificar a expressão
+                        Ao fazer um read, é primeiro injectado código para verificação se o field já foi escrito anteriormente
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Field Initialization</h2>
+                    <br>
+                    <p>How to we solve this?<p>
+<pre><code class="java">@Assertion("true")
+int foo;
+
+@Assertion("bar>foo")
+int bar;
+
+bar=1;
+foo++;
+</code></pre>
+                    <br>
+                    <h3 class="fragment"><strong> Double Code Injection </strong></h3>
+
+                    <aside class="notes">
+                        A unica situação que ficou por resolver numa primeira fase foi a verificação de fields com assertions em expressões de outros field assertions.
+                        Resolvemos esta questão injectando código por uma segunda vez sobre código já injectado o que nos permitiu verificar a inicialização dos fields.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Field Initialization</h2>
+                    <br>
+                    <p> The first injection </p>
+<pre><code class="java">if(!f$writes.contains(bar_hash_code)) //...
+bar=1;
+f$writes.add(bar_hash_code);
+if(!(bar>foo)) //...
+</code></pre>
+                    <div class="fragment">
+                        <p> The second injection </p>
+<pre><code class="java">if(!f$writes.contains(bar_hash_code)) //...
+bar=1;
+f$writes.add(bar_hash_code);
+if(!f$writes.contains(bar_hash_code)) //...
+if(!f$writes.contains(foo_hash_code)) //...
+if(!(bar>foo)) //...
+f$writes.add(bar_hash_code);
+if(!(bar>foo)) //...
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+                        Na primeira injecção apenas estamos a verificar se a asserção bar>foo, mas não estamos a verificar se foo foi inicializado.
+                        Na segunda injecção é verificado a asserção do bar de novo, mas principalmente a asserção do foo é verificada
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Method Assertion</h2>
+                    <br>
+                    <p> This <strong>shouldn't</strong> return NPE! </p>
+<pre><code class="java">Object o = new Object();
+
+public Object getAndClear() {
+    return this.o = null;
+}
+
+@Assertion("getAndClear() != null")
+public void m() {
+    this.o.toString();
+}
+</code></pre>
+                    <br>
+                    <div class="fragment">
+                        <h3><strong> Method Wrapping </strong></h3>
+                    </div>
+
+                    <aside class="notes">
+                        Temos de inserir código exactamente "antes" do return, mantendo o valor dos parâmetros iniciais. Também em relação aos argumentos, não esquecer que argumentos ($1, $2 ...) são actualizados automaticamente, logo temos de "preservar" esses valores. O wrapping to método abrange ambas as situações.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Method Assertion</h2>
+                    <br>
+                    <p> We end up with something <strong>kinda like</strong> this: </p>
+<pre><code class="java">public void m() {
+    // temp "is a" bytecode var
+    temp = m$wrapped();
+    // now we check assertions
+    if(!(getAndClear() != null)) //...
+    // and now we return!
+    return temp;
+}
+
+@Assertion("getAndClear() != null")
+public void m$wrapped() {
+    this.o.toString();
+}
+</code></pre>
+                    <p> A "new" method that returns the result of the original one </p>
+
+                    <aside class="notes">
+                        É óbvio que não é feito assim. No entanto, e como bytecode é mais dificil de perceber que java, achamos que esta representação simplificada é melhor.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Method Assertions</h2>
+                    <br>
+                    <p><strong>Inherited Method Assertions</strong></p>
+<pre><code class="java">class Base {
+    @Assertion("false")
+    public int fooBar(int x) { ... }
+}
+
+public class Derived extends Base {
+    @Override
+    @Assertion("true")
+    public int fooBar(int x) { ... }
+}
+</code></pre>
+                    <div class="fragment">
+                        <p> We <strong>recursively inject code</strong> from parents assertions </p>
+<pre><code class="java">public int fooBar(int x) {
+    temp = fooBar$wrapped(x);
+    if(!(false)) //...
+    if(!(true)) //...
+    return temp;
+}
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+                        Fizemos questão de que as assertions mais próxima da chamada, sejam verificadas primeiro.
+                        Também cobrimos situações onde apenas a Base tem a assertion.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Constructor Assertions</h2>
+                    <br>
+                    <p>Remember Behaviors?</p>
+                    <br>
+                    <div class="fragment">
+<pre><code class="java">if((behavior instanceof CtConstructor) && hasAssertion(behavior)){
+    CtConstructor constructor = (CtConstructor) behavior;
+    constructor.insertBeforeBody(
+        "if(!(" + getAssertionValues(constructor) + ")) //... "
+    );
+}
+</code></pre>
+                    <small>That was easy.</small>
+                    </div>
+
+                    <aside class="notes">
+                        insertBeforeBody insere código no inicio do corpo do construtor.
+                    </aside>
+                </section>
+                <section>
+                    <h2>Assertions on Method Entry</h2>
+                    <br>
+                    <p> We can't break original functionality! </p>
+                    <div class="fragment">
+<pre><code class="java">Object o = new Object();
+
+public Object getAndClear() {
+    return this.o = null;
+}
+
+@Assertion(
+    value="getAndClear() != null",
+    entry="getAndClear() == null"
+)
+public void m() {
+    this.o.toString();
+}
+</code></pre>
+                    <p> Previous example, now with entry assertion </p>
+                    </div>
+                    <aside class="notes">
+                        Esta solução permite manter a funcionalidade original, construindo sobre essa uma nova funcionalidade para as entradas dos métodos. Permite certas operações que de outra maneira não seria possivel, como seja executar expressões diferentes para inicio e fim.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Assertions on Method Entry</h2>
+                    <br>
+                    <p> We inject code at begining of method and at the exit. </p>
+<pre><code class="java">public void m() {
+    // entry assertion
+    if(!(getAndClear() == null)) //...
+    temp = m$wrapped();
+    // value assertion
+    if(!(getAndClear() != null)) //...
+    return temp;
+}
+</code></pre>
+                    <div class="fragment">
+                    <p> It <strong>should</strong> return NPE! </p>
+<pre><code class="no-highlight">## As you can see (getAndClear() == null) expression returned true
+
+[java] Exception in thread "main" java.lang.NullPointerException
+[java]     at ist.meic.pa.tests.Base.m$wrapped(Unknown Source)
+[java]     at ist.meic.pa.tests.Base.m(Unknown Source)
+[java]     ...
+[java] The assertion getAndClear() != null is false
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+                        A maneira mais fácil de provar a extensão, é mesmo reduzir ao absurdo, executando uma situação completamente errada, e esperar daí uma excepção, tal como o fazemos aqui.
+                    </aside>
+                </section>
+
+                <section>
+                    <h1>Questions?</h2>
+                </section>
+
+            </div>
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.min.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    // { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+                    { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+                    // { src: 'plugin/search/search.js', async: true, condition: function() { return !!document.body.classList; } }
+                    // { src: 'plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>
