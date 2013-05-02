@@ -10,28 +10,47 @@
 (define (concrete-methods-table)
   (make-hash))
 
+;; Get Concrete Methods from generic
+(define (get-concrete-methods-from-generic name)
+  (hash-ref generic-methods-table name))
+
+;; Lista de metodos concretos
+(define (concrete-methods-list) (list))
+
 ;; Estrutura para representar funções genericas
-(struct generic-method (name param-number) #:mutable)
+(struct generic-method (name params) #:mutable #:property prop:procedure (lambda (f . params-list) (generic-function-protocol (get-concrete-methods-from-generic (generic-method-name f)) params-list)))
 
 ;; Estrutura para representar métodos
-(struct concrete-method (name params-list body) #:mutable) 
-  
-;; Gerar uma key para indexar a hashtable
-(define (generic-key name param-number)
-  (cons name param-number))
+(struct concrete-method (name params-type func) #:mutable)  
 
 ;; Regra para definir o comando defgeneric
 (define-syntax-rule
   (defgeneric name (params ...))
   (begin
-    (define name (generic-method 'name (length '(params ...))))
-    (hash-set! generic-methods-table (generic-key 'name (length '(params ...))) (concrete-methods-table))))
+    (define name (generic-method 'name '(params ...)))
+    (hash-set! generic-methods-table 'name (concrete-methods-list))))
 
 ;; Regra para definir o comando defmethod
 (define-syntax-rule
   (defmethod name ((params type) ...) body ...)
-  (let ([concrete-meths (hash-ref generic-methods-table (generic-key 'name (length '((params type) ...))))])
-    (hash-set! concrete-meths '(type ...) (body ...))))
- 
-(define (expr-lambda args exp)
-  (lambda (args) exp))
+  (let ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
+        [new-method (concrete-method 'name '(type ...) (lambda (params ...) body ...))])
+    (hash-set! generic-methods-table 'name (cons new-method concrete-methods-list))))
+
+;; Generic function protocol
+(define (generic-function-protocol methods-list params)
+;  (begin
+;    (display methods-list)
+;    (newline)
+;    (display params)
+;    (newline)
+;    ((concrete-method-func (second methods-list)) (first params) (second params))
+;    ))
+
+(define (
+  
+(defgeneric add (x y))
+
+(defmethod add ((x number?)(y number?)) (+ x y))
+
+(defmethod add ((y string?) (e string?)) (string-append y e))
