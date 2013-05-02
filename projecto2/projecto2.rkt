@@ -1,18 +1,37 @@
 #lang racket
 
+;;; Projecto
 
-;;; Projecto - Diversão no Racket
+;; Tabela de metodos genericos
+(define generic-methods-table
+  (make-hash))
 
-(struct generic-func (name params) #:mutable #:property prop:procedure (lambda (n method) (let ((method-list (list)))
-                                                                                          (set! method-list (cons method-list method))
-                                                                                            (method 2 2))))
+;; Tabela de metodos concretos
+(define (concrete-methods-table)
+  (make-hash))
+
+;; Estrutura para representar funções genericas
+(struct generic-method (name param-number) #:mutable)
+
+;; Estrutura para representar métodos
+(struct concrete-method (name params-list body) #:mutable) 
+  
+;; Gerar uma key para indexar a hashtable
+(define (generic-key name param-number)
+  (cons name param-number))
+
+;; Regra para definir o comando defgeneric
 (define-syntax-rule
   (defgeneric name (params ...))
-  (define name 
-  (generic-func 'name '(params ...))))
+  (begin
+    (define name (generic-method 'name (length '(params ...))))
+    (hash-set! generic-methods-table (generic-key 'name (length '(params ...))) (concrete-methods-table))))
 
-(struct generic-method (name params) #:mutable #:property prop:procedure (lambda (name first second)(+ first second)))
-
+;; Regra para definir o comando defmethod
 (define-syntax-rule
-  (defmethod name (params ...) )
-  (name (generic-method 'name '(params ...))))
+  (defmethod name ((params type) ...) body ...)
+  (let ([concrete-meths (hash-ref generic-methods-table (generic-key 'name (length '((params type) ...))))])
+    (hash-set! concrete-meths '(type ...) (body ...))))
+ 
+(define (expr-lambda args exp)
+  (lambda (args) exp))
