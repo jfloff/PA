@@ -34,21 +34,30 @@
 (define-syntax-rule
   (defmethod name ((params type) ...) body ...)
   (let ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
-        [new-method (concrete-method 'name '(type ...) (lambda (params ...) body ...))])
+        [new-method (concrete-method 'name `(,type ...) (lambda (params ...) body ...))])
     (hash-set! generic-methods-table 'name (cons new-method concrete-methods-list))))
+
+;; Verificar se um método é aplicavel
+(define (verify-applicable-method lst params-lst)
+  (cond ((and (empty? lst)(empty? params-lst))'#t)
+        (((first lst)(first params-lst)) (verify-applicable-method (rest lst) (rest params-lst)))
+        (else '#f)))
 
 ;; Generic function protocol
 (define (generic-function-protocol methods-list params)
-;  (begin
-;    (display methods-list)
-;    (newline)
-;    (display params)
-;    (newline)
-;    ((concrete-method-func (second methods-list)) (first params) (second params))
-;    ))
+  (let ((methods-applicable (list)))
+    (define (get-applicable-methods meth-lst params-lst)
+      (if (empty? meth-lst)
+          methods-applicable
+          (if (verify-applicable-method (concrete-method-params-type (first meth-lst)) params-lst)
+              (begin
+                (set! methods-applicable (cons (first meth-lst) methods-applicable))
+                (get-applicable-methods (rest meth-lst) params-lst))
+              (get-applicable-methods (rest meth-lst) params-lst))))
+    (get-applicable-methods methods-list params)
+    methods-applicable))
 
-(define (
-  
+
 (defgeneric add (x y))
 
 (defmethod add ((x number?)(y number?)) (+ x y))
