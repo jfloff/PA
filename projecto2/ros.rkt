@@ -115,6 +115,7 @@
                               (lambda (expr) #f)])
                ((first lst)(first params-lst))) (verify-applicable-method (rest lst) (rest params-lst)))
             (else '#f)))
+    ;; Devolver todos os metodos aplicaveis
     (define (get-applicable-methods meth-lst params-lst)
       (if (empty? meth-lst)
           methods-applicable
@@ -123,13 +124,15 @@
                 (set! methods-applicable (cons (first meth-lst) methods-applicable))
                 (get-applicable-methods (rest meth-lst) params-lst))
               (get-applicable-methods (rest meth-lst) params-lst))))
+    ;; Verificar os metodos especificos
     (define (more-specific-method method-0 method-1)
       (define (more-specific-method-aux types-lst-0 types-lst-1)
         (cond ((and (empty? types-lst-0)(empty? types-lst-1)) #f)
               ((check-possible-cycle (first types-lst-1) (first types-lst-0)) #t)
               ((check-possible-cycle (first types-lst-0) (first types-lst-1)) #f)
               (else (more-specific-method-aux (rest types-lst-0) (rest types-lst-1)))))
-      (more-specific-method-aux (concrete-method-types-ordered method-0)(concrete-method-types-ordered method-1)))   
+      (more-specific-method-aux (concrete-method-types-ordered method-0)(concrete-method-types-ordered method-1)))
+    
     (if (empty? (get-applicable-methods methods-list params))
         (error "Method missing for arguments" params)
         (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params))))
