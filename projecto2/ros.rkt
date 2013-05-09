@@ -3,8 +3,14 @@
 ; Hash para representar o grafo
 (define type-graph (make-hash))
 
-; Definir um subtipo
+; Definir um subtipo 
 (define (defsubtype child parent)
+  (cond ((and (not (hash-has-key? type-graph child))(not (check-possible-cycle child parent))) (hash-set! type-graph child (list parent)))
+        ((not (check-possible-cycle child parent)) (hash-set! type-graph child (list parent)))
+        (else (error "Wrong definition of subtype"))))
+
+; Definir um subtipo (possivelmente com multiplos super tipos)
+(define (def-my-subtype child parent)
   (cond ((and (not (hash-has-key? type-graph child))(not (check-possible-cycle child parent))) (hash-set! type-graph child (list parent)))
         ((not (check-possible-cycle child parent)) (hash-set! type-graph child (cons parent (hash-ref type-graph child))))
         (else (error "Wrong definition of subtype"))))
@@ -21,10 +27,10 @@
        (check-cycle-aux child (hash-ref type-graph parent))))
 
 ;; Estrutura para representar funções genericas
-(struct generic-function (name parameters args-order) #:mutable #:property prop:procedure (lambda (f . params-list) (generic-function-protocol (get-concrete-methods-from-generic (generic-function-name f)) params-list)))
+(struct generic-function (name parameters args-order combination-proc) #:mutable #:property prop:procedure (lambda (f . params-list) (generic-function-protocol (get-concrete-methods-from-generic (generic-function-name f)) params-list)))
 
 ;; Estrutura para representar métodos
-(struct concrete-method (name types func types-ordered) #:mutable)  
+(struct concrete-method (name types func types-ordered combination-proc) #:mutable)  
 
 ;; Tabela de metodos genericos
 (define generic-functions-table
@@ -50,11 +56,20 @@
   (syntax-rules ()
     [(defgeneric name (params ...))
      (begin
-       (define name (generic-function 'name '(params ...) '(params ...)))
+       (define name (generic-function 'name '(params ...) '(params ...) empty))
        (hash-set! generic-functions-table 'name (concrete-methods-list)))]
     [(defgeneric name (params ...) (#:argument-precedence-order args-order ...))
      (begin
-       (define name (generic-function 'name '(params ...) '(args-order ...)))
+       (define name (generic-function 'name '(params ...) '(args-order ...) empty))
+       (hash-set! generic-functions-table 'name (concrete-methods-list)))]
+    [(defgeneric name (params ...) (#:method-combination procedure))
+     (begin
+       (define name (generic-function 'name '(params ...) '(params ...) procedure))
+       (hash-set! generic-functions-table 'name (concrete-methods-list)))]
+    [(defgeneric name (params ...) (#:argument-precedence-order args-order ...)
+       (#:method-combination procedure))
+     (begin
+       (define name (generic-function 'name '(params ...) '(args-order ...) procedure))
        (hash-set! generic-functions-table 'name (concrete-methods-list)))]))
 
 ;; Verificar/Actualizar a ordem de precedencia nos argumentos
@@ -94,7 +109,7 @@
   (defmethod name ((params type) ...) body ...)
   (let* ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
          [types-ordered (check-args-order `(,type ...) '(params ...) (generic-function-args-order name))]
-         [new-method (concrete-method 'name `(,type ...) (lambda (params ...) body ...) types-ordered)]
+         [new-method (concrete-method 'name `(,type ...) (lambda (params ...) body ...) types-ordered (generic-function-combination-proc name))]
          [method-key (cons 'name '((params type) ...))])
     (if (not (hash-has-key? concrete-methods-table method-key))
         (begin
@@ -108,6 +123,7 @@
 ;; Generic function protocol
 (define (generic-function-protocol methods-list params)
   (let ((methods-applicable (list)))
+    
     ;; Verificar se um método é aplicavel
     (define (verify-applicable-method lst params-lst)
       (cond ((and (empty? lst)(empty? params-lst))'#t)
@@ -115,6 +131,7 @@
                               (lambda (expr) #f)])
                ((first lst)(first params-lst))) (verify-applicable-method (rest lst) (rest params-lst)))
             (else '#f)))
+    
     ;; Devolver todos os metodos aplicaveis
     (define (get-applicable-methods meth-lst params-lst)
       (if (empty? meth-lst)
@@ -124,6 +141,7 @@
                 (set! methods-applicable (cons (first meth-lst) methods-applicable))
                 (get-applicable-methods (rest meth-lst) params-lst))
               (get-applicable-methods (rest meth-lst) params-lst))))
+    
     ;; Verificar os metodos especificos
     (define (more-specific-method method-0 method-1)
       (define (more-specific-method-aux types-lst-0 types-lst-1)
@@ -133,9 +151,22 @@
               (else (more-specific-method-aux (rest types-lst-0) (rest types-lst-1)))))
       (more-specific-method-aux (concrete-method-types-ordered method-0)(concrete-method-types-ordered method-1)))
     
-    (if (empty? (get-applicable-methods methods-list params))
-        (error "Method missing for arguments" params)
-        (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params))))
+    ;; Combine the results of executing all the applicable methods
+    (define (method-combination procedure list-applicable params)
+      (define (apply-method lst params)
+        (if (empty? lst)
+            empty
+            (cons (apply (concrete-method-func (first lst)) params) (apply-method (rest lst) params))))
+      (apply procedure (apply-method list-applicable params)))
+    
+ (cond ((empty? (get-applicable-methods methods-list params)) (error "Method missing for arguments" params))
+          ((empty? (concrete-method-combination-proc (first methods-list)))
+           (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params))
+          (else (method-combination (concrete-method-combination-proc (first methods-list)) (sort methods-applicable more-specific-method) params)))))
+
+;;;;;;;;;;;;;;
+;;; TESTES ;;; 
+;;;;;;;;;;;;;;
 
 (defsubtype complex? number?)
 (defsubtype real? complex?)
@@ -156,7 +187,7 @@
 
 (defsubtype integer? string?)
 
-(defgeneric add (x y) (#:argument-precedence-order x y))
+(defgeneric add (x y))
 
 (defmethod add ((x zero?) (y zero?))
   (display "zero?"))
