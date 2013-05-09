@@ -51,6 +51,11 @@
 (define (generic-function-methods function)
   (hash-ref generic-functions-table (generic-function-name function)))
 
+;; Predicados do metodo
+(define method-types concrete-method-types)
+
+
+
 ;; Regra para definir o comando defgeneric
 (define-syntax defgeneric
   (syntax-rules ()
@@ -167,6 +172,10 @@
 ;;;;;;;;;;;;;;
 ;;; TESTES ;;; 
 ;;;;;;;;;;;;;;
+(defgeneric fact (n))
+
+(defmethod fact ((n zero?)) 0)
+(defmethod fact ((n integer?)) (* n (fact (- n 1))))
 
 (defsubtype complex? number?)
 (defsubtype real? complex?)
