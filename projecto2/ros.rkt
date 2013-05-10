@@ -8,8 +8,6 @@
 (provide method-types)
 (provide def-my-subtype)
 
-(require racket/trace)
-
 ; Hash para representar o grafo
 (define type-graph (make-hash))
 
@@ -60,17 +58,7 @@
 
 ;; Get Concrete Methods from generic function name
 (define (get-concrete-methods-from-generic name)
-  (hash-ref generic-functions-table name))
-
-;; Get Concrete Role Methods from concrete-methods-list
-(define (get-role-methods-from-concrete-methods-list role concrete-lst)
-  (let ((role-lst empty))
-    (define (get-role-methods-aux lst)
-      (cond ((empty? lst))
-            ((eq? role (concrete-method-role (first lst))) (begin (set! role-lst (cons (first lst) role-lst)) (get-role-methods-aux (rest lst))))
-            (else (get-role-methods-aux (rest lst)))))
-    (get-role-methods-aux concrete-lst)
-    role-lst))       
+  (hash-ref generic-functions-table name))     
 
 ;; Metodos da funcao generica
 (define (generic-function-methods function)
@@ -161,15 +149,6 @@
              (set! concrete-methods-list (remove-method-from-concrete-list 'name `(,type ...) concrete-methods-list))
              (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
              (hash-set! concrete-methods-table method-key '(body ...)))))]))
-
-(define (more-specific-method-role method-0 method-1)
-  (define (more-specific-role role-0 role-1)
-    (cond ((eq? role-1 around) #f)
-          ((and (eq? role-0 after)(eq? role-1 before)) #f)
-          ((and (empty? role-0)(eq? role-1 before)) #f)
-          ((and (eq? role-0 after)(empty? role-1)) #f)
-          (else #t)))
-  (more-specific-role (concrete-method-role method-0)(concrete-method-role method-1)))
 
 ;; Generic function protocol
 (define (generic-function-protocol methods-list params)
