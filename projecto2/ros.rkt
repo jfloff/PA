@@ -233,21 +233,11 @@
     
     (cond ((empty? methods-applicable) (no-applicable-method params))
           ((empty? (concrete-method-combination-proc (first methods-list)))
-           (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params))
+           (apply (concrete-method-func (first (append (sort methods-around-applicable more-specific-method)
+                                                       (sort methods-before-applicable more-specific-method)
+                                                       (sort methods-applicable more-specific-method)
+                                                       (sort methods-after-applicable more-specific-method-after)))) params))
           (else (method-combination (concrete-method-combination-proc (first methods-list))
                                     (append (sort methods-around-applicable more-specific-method)
-                                            (sort methods-before-applicable more-specific-method)
-                                            (sort methods-applicable more-specific-method)
-                                            (sort methods-after-applicable more-specific-method-after)) params)))))
-
-(defsubtype integer? number?)
-(defsubtype integer? positive?)
-(defsubtype zero? integer?)
-(defsubtype even? integer?)
-
-(defgeneric add (x y) (#:argument-precedence-order x y))
-(defmethod add ((x number?)(y integer?)) (+ x y 100))
-(defmethod add ((x number?)(y number?))(* 100 100))
-
-
-(define aux (get-concrete-methods-from-generic 'add))
+                                            (sort methods-applicable more-specific-method))
+                                    params)))))
