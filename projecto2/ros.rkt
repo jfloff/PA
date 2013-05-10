@@ -180,3 +180,12 @@
           ((empty? (concrete-method-combination-proc (first methods-list)))(begin (display (concrete-method-name (first methods-applicable)))
                                                                                   (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params)))
           (else (method-combination (concrete-method-combination-proc (first methods-list)) (sort methods-applicable more-specific-method) params)))))
+
+(defsubtype integer? number?)
+(defsubtype zero? integer?)
+(defsubtype even? integer?)
+
+(defgeneric add (x y) (#:argument-precedence-order x y))
+(defmethod add ((x number?)(y integer?))(* 100 100))
+
+(defmethod add ((x even?)(y number?)) (+ x y 100))
