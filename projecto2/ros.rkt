@@ -40,9 +40,14 @@
 (struct generic-function (name parameters args-order combination-proc) #:mutable #:property prop:procedure (lambda (f . params-list) (generic-function-protocol (get-concrete-methods-from-generic (generic-function-name f)) params-list)))
 
 ;; Estrutura para representar métodos
-(struct concrete-method (name types func types-ordered combination-proc) #:mutable)  
+(struct concrete-method (name types role func types-ordered combination-proc) #:mutable)  
 
-;; Tabela de metodos genericos
+;; Methods Roles
+(define around ':around)
+(define after ':after)
+(define before ':before)
+
+;; Tabela de metodos genericos: referencia metodos concretos
 (define generic-functions-table
   (make-hash))
 
@@ -56,6 +61,16 @@
 ;; Get Concrete Methods from generic function name
 (define (get-concrete-methods-from-generic name)
   (hash-ref generic-functions-table name))
+
+;; Get Concrete Role Methods from concrete-methods-list
+(define (get-role-methods-from-concrete-methods-list role concrete-lst)
+  (let ((role-lst empty))
+    (define (get-role-methods-aux lst)
+      (cond ((empty? lst))
+            ((eq? role (concrete-method-role (first lst))) (begin (set! role-lst (cons (first lst) role-lst)) (get-role-methods-aux (rest lst))))
+            (else (get-role-methods-aux (rest lst)))))
+    (get-role-methods-aux concrete-lst)
+    role-lst))       
 
 ;; Metodos da funcao generica
 (define (generic-function-methods function)
@@ -118,24 +133,50 @@
     lst))
 
 ;; Regra para definir o comando defmethod
-(define-syntax-rule
-  (defmethod name ((params type) ...) body ...)
-  (let* ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
-         [types-ordered (check-args-order `(,type ...) '(params ...) (generic-function-args-order name))]
-         [new-method (concrete-method 'name `(,type ...) (lambda (params ...) body ...) types-ordered (generic-function-combination-proc name))]
-         [method-key (cons 'name '((params type) ...))])
-    (if (not (hash-has-key? concrete-methods-table method-key))
-        (begin
-          (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
-          (hash-set! concrete-methods-table method-key '(body ...)))
-        (begin
-          (set! concrete-methods-list (remove-method-from-concrete-list 'name `(,type ...) concrete-methods-list))
-          (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
-          (hash-set! concrete-methods-table method-key '(body ...))))))
+(define-syntax defmethod
+  (syntax-rules ()
+    [(defmethod name ((params type) ...) body ...)
+     (let* ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
+            [types-ordered (check-args-order `(,type ...) '(params ...) (generic-function-args-order name))]
+            [new-method (concrete-method 'name `(,type ...) empty (lambda (params ...) body ...) types-ordered (generic-function-combination-proc name))]
+            [method-key (cons 'name '((params type) ...))])
+       (if (not (hash-has-key? concrete-methods-table method-key))
+           (begin
+             (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
+             (hash-set! concrete-methods-table method-key '(body ...)))
+           (begin
+             (set! concrete-methods-list (remove-method-from-concrete-list 'name `(,type ...) concrete-methods-list))
+             (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
+             (hash-set! concrete-methods-table method-key '(body ...)))))]
+    [(defmethod name #:role role ((params type) ...) body ...)
+     (let* ([concrete-methods-list (get-concrete-methods-from-generic 'name)]
+            [types-ordered (check-args-order `(,type ...) '(params ...) (generic-function-args-order name))]
+            [new-method (concrete-method 'name `(,type ...) role (lambda (params ...) body ...) types-ordered (generic-function-combination-proc name))]
+            [method-key (cons 'name '((params type) ...))])
+       (if (not (hash-has-key? concrete-methods-table method-key))
+           (begin
+             (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
+             (hash-set! concrete-methods-table method-key '(body ...)))
+           (begin
+             (set! concrete-methods-list (remove-method-from-concrete-list 'name `(,type ...) concrete-methods-list))
+             (hash-set! generic-functions-table 'name (cons new-method concrete-methods-list))
+             (hash-set! concrete-methods-table method-key '(body ...)))))]))
+
+(define (more-specific-method-role method-0 method-1)
+  (define (more-specific-role role-0 role-1)
+    (cond ((eq? role-1 around) #f)
+          ((and (eq? role-0 after)(eq? role-1 before)) #f)
+          ((and (empty? role-0)(eq? role-1 before)) #f)
+          ((and (eq? role-0 after)(empty? role-1)) #f)
+          (else #t)))
+  (more-specific-role (concrete-method-role method-0)(concrete-method-role method-1)))
 
 ;; Generic function protocol
 (define (generic-function-protocol methods-list params)
-  (let ((methods-applicable (list)))
+  (let ([methods-applicable (list)]
+        [methods-around-applicable (list)]
+        [methods-before-applicable (list)]
+        [methods-after-applicable (list)])
     
     ;; Verificar se um método é aplicavel
     (define (verify-applicable-method lst params-lst)
@@ -151,7 +192,10 @@
           methods-applicable
           (if (verify-applicable-method (concrete-method-types (first meth-lst)) params-lst)
               (begin
-                (set! methods-applicable (cons (first meth-lst) methods-applicable))
+                (cond ((eq? (concrete-method-role (first meth-lst)) around) (set! methods-around-applicable (cons (first meth-lst) methods-around-applicable)))
+                      ((eq? (concrete-method-role (first meth-lst)) before) (set! methods-before-applicable (cons (first meth-lst) methods-before-applicable)))
+                      ((eq? (concrete-method-role (first meth-lst)) after) (set! methods-after-applicable (cons (first meth-lst) methods-after-applicable)))
+                      (else (set! methods-applicable (cons (first meth-lst) methods-applicable))))
                 (get-applicable-methods (rest meth-lst) params-lst))
               (get-applicable-methods (rest meth-lst) params-lst))))
     
@@ -161,6 +205,15 @@
         (cond ((and (empty? types-lst-0)(empty? types-lst-1)) #f)
               ((check-possible-cycle (first types-lst-1) (first types-lst-0)) #t)
               ((check-possible-cycle (first types-lst-0) (first types-lst-1)) #f)
+              (else (more-specific-method-aux (rest types-lst-0) (rest types-lst-1)))))
+      (more-specific-method-aux (concrete-method-types-ordered method-0)(concrete-method-types-ordered method-1)))
+    
+    ;; Verificar precedencia do after
+    (define (more-specific-method-after method-0 method-1)
+      (define (more-specific-method-aux types-lst-0 types-lst-1)
+        (cond ((and (empty? types-lst-0)(empty? types-lst-1)) #f)
+              ((check-possible-cycle (first types-lst-1) (first types-lst-0)) #f)
+              ((check-possible-cycle (first types-lst-0) (first types-lst-1)) #t)
               (else (more-specific-method-aux (rest types-lst-0) (rest types-lst-1)))))
       (more-specific-method-aux (concrete-method-types-ordered method-0)(concrete-method-types-ordered method-1)))
     
@@ -176,16 +229,15 @@
     (define (no-applicable-method arguments)
       (error "Method missing for arguments" arguments))
     
-    (cond ((empty? (get-applicable-methods methods-list params)) (no-applicable-method params))
-          ((empty? (concrete-method-combination-proc (first methods-list)))(begin (display (concrete-method-name (first methods-applicable)))
-                                                                                  (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params)))
-          (else (method-combination (concrete-method-combination-proc (first methods-list)) (sort methods-applicable more-specific-method) params)))))
-
-(defsubtype integer? number?)
-(defsubtype zero? integer?)
-(defsubtype even? integer?)
-
-(defgeneric add (x y) (#:argument-precedence-order x y))
-(defmethod add ((x number?)(y integer?))(* 100 100))
-
-(defmethod add ((x even?)(y number?)) (+ x y 100))
+    (get-applicable-methods methods-list params)
+    
+    (cond ((empty? methods-applicable) (no-applicable-method params))
+          ((empty? (concrete-method-combination-proc (first methods-list)))
+           (apply (concrete-method-func (first (append (sort methods-around-applicable more-specific-method)
+                                                       (sort methods-before-applicable more-specific-method)
+                                                       (sort methods-applicable more-specific-method)
+                                                       (sort methods-after-applicable more-specific-method-after)))) params))
+          (else (method-combination (concrete-method-combination-proc (first methods-list))
+                                    (append (sort methods-around-applicable more-specific-method)
+                                            (sort methods-applicable more-specific-method))
+                                    params)))))
