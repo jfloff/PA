@@ -31,7 +31,7 @@
     (cond ((empty? parents-lst)#f)
           ((eq? child (first parents-lst)) #t)
           ((hash-has-key? type-graph (first parents-lst))(or (check-cycle-aux child (hash-ref type-graph (first parents-lst)))
-                                                                (check-cycle-aux child (rest parents-lst))))
+                                                             (check-cycle-aux child (rest parents-lst))))
           (else (check-cycle-aux child (rest parents-lst)))))
   (and (hash-has-key? type-graph parent)
        (check-cycle-aux child (hash-ref type-graph parent))))
@@ -172,7 +172,11 @@
             (cons (apply (concrete-method-func (first lst)) params) (apply-method (rest lst) params))))
       (apply procedure (apply-method list-applicable params)))
     
-    (cond ((empty? (get-applicable-methods methods-list params)) (error "Method missing for arguments" params))
+    ;; No Aplicable Methods
+    (define (no-applicable-method arguments)
+      (error "Method missing for arguments" arguments))
+    
+    (cond ((empty? (get-applicable-methods methods-list params)) (no-applicable-method params))
           ((empty? (concrete-method-combination-proc (first methods-list)))(begin (display (concrete-method-name (first methods-applicable)))
                                                                                   (apply (concrete-method-func (first (sort methods-applicable more-specific-method))) params)))
           (else (method-combination (concrete-method-combination-proc (first methods-list)) (sort methods-applicable more-specific-method) params)))))
