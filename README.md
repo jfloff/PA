@@ -22,7 +22,6 @@ Programacao Avancada
 
 ### Projecto 1
 *   **How to run in ant:** `ant -Dclass=<ClassName> run`
-*   Apresentação: http://jfloff.github.com/PA/
 
 
 ### Projecto 2
