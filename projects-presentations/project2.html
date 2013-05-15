@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Multi-Methods in Racket</title>
+        <link rel="stylesheet" href="css/reveal.min.css">
+
+        <link rel="stylesheet" href="css/theme/solarized.css" id="theme">
+        <!-- For syntax highlighting -->
+        <link rel="stylesheet" href="lib/css/railscasts.css">
+        <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+        <!-- <link rel="stylesheet" href="css/print/pdf.css"> -->
+        <!--<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?lang=css&skin=desert"></script>-->
+        <script>
+            document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'pdf' ) + '.css" type="text/css" media="print">' );
+        </script>
+        <!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="reveal">
+            <!-- Any section element inside of this container is displayed as a slide -->
+            <div class="slides">
+
+                <section>
+                    <h1>Multi-Methods in Racket</h1>
+                    <br>
+                    <p>
+                        <small>
+                            João Loff - 56960<br>
+                            Alexandre Almeida - 64712<br>
+                            Tiago Aguiar - 64870
+                        </small>
+                    </p>
+
+                    <aside class="notes">
+                        De referir que o código usado não é exactamente aquele que foi usado no projecto, estando simplificado e reduzido para uma melhor apresentação e compreensão da solução.
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Structs</h2>
+                    <br>
+                    <div class="fragment">
+                        <p>Generic Functions</p>
+<pre><code>(struct generic-function (name parameters)
+    #:mutable #:property prop:procedure
+    (lambda (f . params-list)
+        (generic-function-protocol f params-list)))
+</code></pre>
+                        <br>
+                    </div>
+                    <div class="fragment">
+                        <p>Concrete Methods</p>
+<pre><code>(struct concrete-method (name types func)
+    #:mutable)
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Generic Function Protocol</h2>
+                    <br>
+                    <ol>
+                        <li>Finds applicable methods. If no method found returns an error. </li>
+                        <li>Sorts methods found by their types. Calls the body of first method in that list.</li>
+                    </ol>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Finding applicable methods</h2>
+                    <br>
+                    <ul>
+                        <li>For each parameter we check if its applicable to the correspondent type-check method</li>
+                        <li>If all the matches from the parameters returned #t, the method is added to the list of applicable methods</li>
+                    </ul>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Syntax Rules</h2>
+                    <br>
+                    <div class="fragment">
+                        <p>Generic Functions</p>
+<pre class="prettyprint lang-scm"><code>(define-syntax defgeneric
+    (syntax-rules ()
+        [(defgeneric name (params ...))
+            (begin
+                (define name (generic-function 'name '(params ...)))
+                (add-to generic-functions-table 'name (concrete-methods-list)))]
+</code></pre>
+                        <br>
+                    </div>
+                    <div class="fragment">
+                        <p>Concrete Methods</p>
+<pre class="prettyprint lang-scm"><code>(define-syntax-rule
+  (defmethod name ((params type) ...) body ...)
+    (if (hash-has-key? concrete-methods-table method-key)
+        (remove-method-from-concrete-list 'name concrete-methods-list))
+    (add-to generic-functions-table 'name new-method concrete-methods-list)
+    (add-to concrete-methods-table method-key '(body ...)))
+</code></pre>
+                    </div>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Type Graph</h2>
+                    <br>
+                    <img src="./img1.png">
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Type Graph</h2>
+                    <br>
+                    <img src="./img2.png">
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Type Graph</h2>
+                    <br>
+                    <p>How it ended up</p>
+                    <img src="./img3.png">
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Parent Search</h2>
+                    <br>
+<pre class="prettyprint lang-scm"><code>(define (check-possible-cycle child parent)
+  (define (check-cycle-aux child parents-lst)
+    (cond ((empty? parents-lst) #f)
+          ((eq? child (first parents-lst)) #t)
+          ((hash-has-key? type-graph
+                          (first parents-lst))
+                          (check-cycle-aux child (hash-ref type-graph (first parents-lst))))
+          (else (check-cycle-aux child (rest parents-lst)))))
+  (and (hash-has-key? type-graph parent)
+       (check-cycle-aux child (hash-ref type-graph parent))))
+</code></pre>
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Extensions - What changed</h2>
+                    <br>
+<pre class="prettyprint lang-scm"><code>(struct generic-function (name parameters args-order combination-proc) ...)
+
+struct concrete-method (name types role func types-ordered combination-proc) #:mutable)
+</code></pre>
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Multiple Super Types</h2>
+                    <br>
+                    <img src="./img4.png">
+                    <p>Add to parents list</p>
+                    <p>Add another recursive pass in Parent Search</p>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Argument Precedence Order</h2>
+                    <br>
+<pre class="prettyprint lang-scm"><code>(defsubtype zero? number?)
+(defgeneric showme (x y) #:argument-precedence-order y x)
+(defmethod showme ((x zero?) (y number?)) (display "first"))
+(defmethod showme ((x number?) (y zero?)) (display "second"))
+
+(showme 2 0)
+Result: second
+(showme 0 2)
+Result: first
+</code></pre>
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Method Combination</h2>
+                    <br>
+<pre class="prettyprint lang-scm"><code>(defgeneric add (x y) #:method-combination list)
+(defmethod add ((x number?) (y number?)) (+ x y))
+(defmethod add ((x integer?) (y integer?)) (+ x y 10))
+(defmethod add ((x integer?) (y zero?)) (+ x y 100))
+
+(add 1 1)
+Result: '(2 12)
+(add 1 0)
+Result: '(1 11 101)
+</code></pre>
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+                <section>
+                    <h2>Roles</h2>
+                    <img src="./img5.png">
+                    <br>
+                    <br>
+                    <h3>New Method Ordering</h3>
+                    <p>From precedence-type ordering <btrong>to</strong> precendence-type and role ordering</p>
+
+                    <aside class="notes">
+
+                    </aside>
+                </section>
+
+
+                <section>
+                    <h1>Questions?</h2>
+                </section>
+
+            </div>
+        </div>
+
+        <script src="lib/js/head.min.js"></script>
+        <script src="js/reveal.min.js"></script>
+
+        <script>
+
+            // Full list of configuration options available here:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+                // Optional libraries used to extend on reveal.js
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    // { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    //{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+                    { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+                    // { src: 'plugin/search/search.js', async: true, condition: function() { return !!document.body.classList; } }
+                    // { src: 'plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+                ]
+            });
+
+        </script>
+
+    </body>
+</html>
