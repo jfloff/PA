@@ -1,6 +1,11 @@
 Programacao Avancada
 ====================
 
+**Grupo**
+* [João Loff](https://github.com/jfloff)
+* [Alexandre Almeida](https://github.com/twinkow/)
+* [Tiago Aguiar](https://github.com/tiagoaguiar100/)
+
 ## Labs
 
 ### Lab 01
